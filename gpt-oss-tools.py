@@ -55,10 +55,7 @@ async def main(model: str, api_key: str):
         For questions requiring external or up-to-date information, start with web_search. If results include useful URLs but lack sufficient details, follow up with browse_url on one or more specific URLs to gather full content for your response.
         For all non-weather topics needing current information, rely on web_search and browse_url.
         For mathematical, computational, or programmatic tasks (e.g., calculations, data manipulation, simulations), use execute_python. Always show the code you used and the result in code blocks.
-
-        # Math-Specific Instructions
-
-        For symbolic math (e.g., solving equations, simplifying expressions), use sympy in execute_python. Example: 'from sympy import symbols, solve; x = symbols("x"); result = solve(x**2 - 4, x)'.
+        When returning results from mathmatical calculations, simply state the result, then keep the conversation going naturally.
 
         # Weather-Specific Instructions:
 
