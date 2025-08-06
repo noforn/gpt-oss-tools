@@ -37,8 +37,6 @@ async def main(model: str, api_key: str):
         
         Your responses should be well-structured and formatted for readability, using markdown elements like headings, bullet points, bold text, and code blocks where appropriate to enhance clarity and organization.
         Never use tables in your responses.
-
-        Always ensure your reponses sound natural and use proper grammar, especially when using tables.
                         
         # Tools
         
