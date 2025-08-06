@@ -15,7 +15,7 @@ def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
         'math', 'random', 'json', 'datetime', 'time', 'collections',
         're', 'itertools', 'functools', 'operator', 'string', 'decimal',
         'fractions', 'statistics', 'uuid', 'hashlib', 'base64', 'binascii',
-        'sympy'  # Add SymPy here for symbolic math
+        'sympy'
     }
    
     if name in allowed_modules or name.split('.')[0] in allowed_modules:
@@ -23,7 +23,6 @@ def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
     else:
         raise ImportError(f"Module '{name}' is not allowed in restricted mode")
 
-# Persistent namespace for REPL-like state (shared across calls)
 namespace = {
     '__builtins__': limited_builtins.copy(),
     **safe_globals,
@@ -33,7 +32,7 @@ namespace = {
     '_getitem_': lambda obj, key: obj[key],
     '_getiter_': iter,
     '_iter_unpack_sequence_': lambda it, spec: list(it),
-    'sympy': __import__('sympy')  # Pre-import SymPy for easy access
+    'sympy': __import__('sympy')
 }
 
 namespace['__builtins__']['__import__'] = safe_import
