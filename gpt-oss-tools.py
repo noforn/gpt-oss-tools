@@ -8,7 +8,11 @@ from rich.panel import Panel
 from termcolor import colored
 from searchTools import web_search, browse_url
 from weatherTools import get_location, get_weather
+from pythonTools import execute_python
 from datetime import datetime
+import warnings
+
+warnings.filterwarnings("ignore")
 
 set_tracing_disabled(True)
 
@@ -41,11 +45,15 @@ async def main(model: str, api_key: str):
         get_location: Determines the user's location (including latitude and longitude) based on their IP address.
         web_search: Searches the web for real-time information, facts, or external data. Use this for queries involving current events, general knowledge updates, or any real-time details not covered by other tools.
         browse_url: Fetches and reads detailed content from a specific URL (e.g., from web_search results). Use this when web_search snippets are insufficient and you need in-depth information from a page.
+        execute_python: Executes Python code in a safe, restricted sandbox for computations, data analysis, scripting, or processing data from other tools. This is stateful (REPL-style), so variables persist across calls. 
+        Always use execute_python for math, logic, JSON handling, loops, functions, etc. Example: To compute sqrt(16), use code like 'import math\nresult = math.sqrt(16)'. Supports safe modules like math, json, datetime, etc. Do not use for external access or unsafe operations.
 
         # General Tool Usage Guidelines
 
         For questions requiring external or up-to-date information, start with web_search. If results include useful URLs but lack sufficient details, follow up with browse_url on one or more specific URLs to gather full content for your response.
         For all non-weather topics needing current information, rely on web_search and browse_url.
+        For mathematical, computational, or programmatic tasks (e.g., calculations, data manipulation, simulations), use execute_python.
+        When returning results from mathmatical calculations, simply state the result, do not include the code you used to calculate it.
 
         # Weather-Specific Instructions:
 
@@ -54,7 +62,7 @@ async def main(model: str, api_key: str):
         Do not use web_search or browse_url for weather-related queries; handle them exclusively with get_location and get_weather as needed.
         """,
         model=LitellmModel(model=model, api_key=api_key),
-        tools=[get_weather, get_location, web_search, browse_url],
+        tools=[get_weather, get_location, web_search, browse_url, execute_python],
     )
 
     history = []
