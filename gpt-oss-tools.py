@@ -13,6 +13,8 @@ from datetime import datetime
 import warnings
 from pylatexenc.latex2text import LatexNodes2Text
 import readline
+import re
+from tableTools import fix_markdown_tables
 
 warnings.filterwarnings("ignore")
 
@@ -40,7 +42,6 @@ async def main(model: str, api_key: str):
         Reasoning: high
         
         Your responses should be well-structured and formatted for readability, using markdown elements like headings, bullet points, bold text, and code blocks where appropriate to enhance clarity and organization.
-        Never use tables in your responses.
                         
         # Tools
         
@@ -87,6 +88,7 @@ async def main(model: str, api_key: str):
         
         # Convert LaTeX to Unicode
         processed_response = latex_converter.latex_to_text(response)
+        processed_response = fix_markdown_tables(processed_response)
         
         print()
         console.print(Panel(Markdown(processed_response), title="Agent", border_style="magenta", style="bold magenta"))
