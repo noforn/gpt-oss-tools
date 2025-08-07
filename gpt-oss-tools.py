@@ -20,7 +20,7 @@ set_tracing_disabled(True)
 console = Console()
 latex_converter = LatexNodes2Text()
 
-current_date = datetime.now().strftime("%Y-%m-%d")
+current_date = datetime.now().strftime("%A, %Y-%m-%d")
 
 async def main(model: str, api_key: str):
     agent = Agent(
