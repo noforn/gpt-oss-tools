@@ -56,7 +56,6 @@ def browse_url(url: str):
         text = text.strip()
         return (text[:2000] + '...') if len(text) > 2000 else text
 
-    # 1) Try static HTML fetch with retries
     last_err = None
     for attempt in range(1, max(1, retries) + 1):
         try:
@@ -78,12 +77,9 @@ def browse_url(url: str):
                 return f"Content from {url}:\n{summarize_text(text)}"
         except Exception as e:
             last_err = e
-        # no sleep/backoff to keep it simple here
 
-    # 2) Optionally try JS rendering with Playwright if requested or static failed
     if last_err is not None:
         try:
-            # Import lazily so environments without Playwright don't fail at import time
             from playwright.sync_api import sync_playwright
 
             with sync_playwright() as p:
@@ -97,7 +93,6 @@ def browse_url(url: str):
                 )
                 page = context.new_page()
                 page.goto(url, timeout=timeout_seconds * 1000, wait_until='domcontentloaded')
-                # Try to settle for network idle; ignore timeout to still capture content
                 try:
                     page.wait_for_load_state('networkidle', timeout=timeout_seconds * 1000)
                 except Exception:
@@ -120,5 +115,4 @@ def browse_url(url: str):
                 f"Hint: Install Playwright with 'pip install playwright' and run 'playwright install'."
             )
 
-    # Fallback: return last error from static path
     return f"Failed to fetch {url}: {last_err}"
