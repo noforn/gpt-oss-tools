@@ -35,6 +35,7 @@ async def main(model: str, api_key: str):
         Knowledge cutoff: 2024-06
         Current date: {current_date}
         Current time: {current_time}
+
         Reasoning: high
         
         Your responses should be well-structured and formatted for readability, using markdown elements like headings, bullet points, bold text, and code blocks where appropriate to enhance clarity and organization.
@@ -63,6 +64,7 @@ async def main(model: str, api_key: str):
         If the user asks for weather without specifying a location, first use get_location to obtain the details (including latitude and longitude), then use get_weather with those coordinates.
         In your response, include only the most relevant weather details based on the user's question—do not provide all available information unless requested.
         Do not use web_search or browse_url for weather-related queries; handle them exclusively with get_location and get_weather as needed.
+        When returning weather information, be sure it is aligned with the current date and day of the week.
         """,
         model=LitellmModel(model=model, api_key=api_key),
         tools=[get_weather, get_location, web_search, browse_url, execute_python],
@@ -79,7 +81,7 @@ async def main(model: str, api_key: str):
         
         full_prompt = "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + prompt if history else prompt
         
-        result = await Runner.run(agent, full_prompt)
+        result = await Runner.run(agent, full_prompt, max_turns=20)
         response = result.final_output
         
         # Convert LaTeX to Unicode
