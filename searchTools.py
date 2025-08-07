@@ -44,7 +44,7 @@ def browse_url(url: str):
     retries = 2
     timeout_seconds = 10
     proxy = None
-    console.print(f"\nBrowsing URL: {url} (auto JS fallback)", style="dim blue")
+    console.print(f"\nBrowsing URL: {url}", style="dim blue")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
