@@ -21,6 +21,7 @@ console = Console()
 latex_converter = LatexNodes2Text()
 
 current_date = datetime.now().strftime("%A, %Y-%m-%d")
+current_time = datetime.now().strftime("%I:%M %p")
 
 async def main(model: str, api_key: str):
     agent = Agent(
@@ -33,6 +34,7 @@ async def main(model: str, api_key: str):
 
         Knowledge cutoff: 2024-06
         Current date: {current_date}
+        Current time: {current_time}
         Reasoning: high
         
         Your responses should be well-structured and formatted for readability, using markdown elements like headings, bullet points, bold text, and code blocks where appropriate to enhance clarity and organization.
