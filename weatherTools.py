@@ -14,11 +14,11 @@ def get_location():
     console.print("\nChecking location...", style="dim blue")
     url = "http://ip-api.com/json"
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=8)
         response.raise_for_status()
         data = response.json()
-        if data['status'] == 'success':
-            return data['city'], data['lat'], data['lon']
+        if data.get('status') == 'success':
+            return data.get('city', 'Unknown'), data.get('lat'), data.get('lon')
         else:
             return "Unknown location"
     except Exception as e:
