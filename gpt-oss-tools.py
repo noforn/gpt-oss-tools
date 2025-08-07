@@ -1,7 +1,6 @@
 import asyncio
 import requests
 import os
-import os
 from agents import Agent, Runner, function_tool, set_tracing_disabled
 from agents.extensions.models.litellm_model import LitellmModel
 from rich.console import Console, Group
@@ -119,7 +118,7 @@ async def main(model: str, api_key: str):
             result = await Runner.run(agent, full_prompt, max_turns=20)
         except Exception as e:
             if _is_ollama_tool_template_error(e):
-                console.print("\nDetected model/tool schema issue; retrying without tools...", style="yellow")
+                console.print("\nHmm, something went wrong. Retrying without tools...", style="yellow")
                 fallback_agent = Agent(
                     name="Assistant",
                     instructions=instructions_text,
