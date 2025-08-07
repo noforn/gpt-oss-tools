@@ -44,7 +44,6 @@ def _is_ollama_tool_template_error(exc: Exception) -> bool:
     )
 
 async def main(model: str, api_key: str):
-    # Optional LiteLLM debug
     if os.getenv("LITELLM_DEBUG", "0") in ("1", "true", "True"):
         try:
             import litellm
@@ -109,7 +108,6 @@ async def main(model: str, api_key: str):
             break
 
         if prompt.strip().lower().startswith('/reset'):
-            # Clear conversation context and screen
             history = []
             console.clear()
             print(colored("Context cleared.", "blue"))
@@ -133,12 +131,10 @@ async def main(model: str, api_key: str):
                 raise
         response = result.final_output
         
-        # Convert LaTeX to Unicode, fix tables, and linkify bare URLs
         processed_response = latex_converter.latex_to_text(response)
         processed_response = fix_markdown_tables(processed_response)
         processed_response = linkify_bare_urls(processed_response)
 
-        # Extract markdown tables to render as rich tables
         text_without_tables, parsed_tables = extract_markdown_tables(processed_response)
         rich_tables = build_rich_tables(parsed_tables) if parsed_tables else []
         
