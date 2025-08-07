@@ -93,7 +93,7 @@ async def main(model: str, api_key: str):
             # Clear conversation context and screen
             history = []
             console.clear()
-            print(colored("Context cleared.", "green"))
+            print(colored("Context cleared.", "blue"))
             continue
         
         full_prompt = "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + prompt if history else prompt
