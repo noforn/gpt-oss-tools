@@ -1,6 +1,7 @@
 import asyncio
 import requests
 import os
+import argparse
 from agents import Agent, Runner, function_tool, set_tracing_disabled
 from agents.extensions.models.litellm_model import LitellmModel
 from rich.console import Console, Group
@@ -146,4 +147,22 @@ async def main(model: str, api_key: str):
         history.append(f"Assistant: {response}")
 
 if __name__ == "__main__":
-    asyncio.run(main("ollama_chat/gpt-oss:20b", "ollama"))
+    parser = argparse.ArgumentParser(description="GPT OSS Tools - CLI and Web UI")
+    parser.add_argument("--model", type=str, default="ollama_chat/gpt-oss:20b", help="Model identifier")
+    parser.add_argument("--api-key", type=str, default="ollama", help="API key or provider selector (e.g., 'ollama')")
+    parser.add_argument("--web", action="store_true", help="Launch the dark-themed web UI instead of CLI")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host for web UI")
+    parser.add_argument("--port", type=int, default=7860, help="Port for web UI")
+
+    args = parser.parse_args()
+
+    if args.web:
+        try:
+            # Import lazily so CLI runs even if FastAPI isn't installed
+            from web_ui import run_web_ui
+        except Exception as e:
+            print("Web UI dependencies missing. Install with: pip install fastapi uvicorn pylatexenc")
+            raise
+        run_web_ui(args.model, args.api_key, host=args.host, port=args.port)
+    else:
+        asyncio.run(main(args.model, args.api_key))
