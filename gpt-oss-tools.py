@@ -12,6 +12,7 @@ from pythonTools import execute_python
 from datetime import datetime
 import warnings
 from pylatexenc.latex2text import LatexNodes2Text
+import readline
 
 warnings.filterwarnings("ignore")
 
