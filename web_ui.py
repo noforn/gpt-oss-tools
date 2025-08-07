@@ -209,7 +209,7 @@ _INDEX_HTML = r"""
     }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html { height: -webkit-fill-available; }
     body {
       margin: 0;
       color: var(--text);
@@ -220,6 +220,8 @@ _INDEX_HTML = r"""
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
       overflow: hidden;
     }
 
@@ -238,10 +240,11 @@ _INDEX_HTML = r"""
     }
 
     .wrap {
-      height: 100%;
+      height: 100dvh;
       display: grid;
       grid-template-rows: auto 1fr auto;
       max-width: 1100px;
+      width: 100%;
       margin: 0 auto;
     }
 
@@ -251,7 +254,7 @@ _INDEX_HTML = r"""
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px 18px;
+      padding: calc(12px + env(safe-area-inset-top, 0)) 18px 12px 18px;
       background: linear-gradient(180deg, rgba(11, 15, 20, 0.9), rgba(11, 15, 20, 0.65));
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(10px) saturate(160%);
@@ -302,6 +305,9 @@ _INDEX_HTML = r"""
       padding: 18px;
       overflow-y: auto;
       scroll-behavior: smooth;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;     /* Firefox */
     }
@@ -368,11 +374,12 @@ _INDEX_HTML = r"""
 
     .input-bar {
       display: grid; grid-template-columns: 1fr auto; gap: 12px;
-      padding: 14px; border-top: 1px solid var(--border); background: rgba(11, 15, 20, 0.65);
+      padding: 14px; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0));
+      border-top: 1px solid var(--border); background: rgba(11, 15, 20, 0.65);
       backdrop-filter: blur(10px) saturate(140%);
     }
     textarea {
-      resize: none; height: 56px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+      resize: none; height: 56px; max-height: 160px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.6)); color: var(--text);
       outline: none; font-size: 14px; line-height: 1.45; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
@@ -399,9 +406,18 @@ _INDEX_HTML = r"""
     .ghost-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
 
     @media (max-width: 720px) {
+      header { gap: 10px; }
+      h1 { font-size: 15px; }
       main { padding: 12px; }
-      .messages { padding: 12px; }
-      .wrap { grid-template-rows: auto 1fr auto; }
+      .chat-card { border-radius: 14px; }
+      .messages { padding: 12px; padding-bottom: 6px; }
+      textarea { height: 52px; font-size: 15px; }
+      button { height: 52px; padding: 0 16px; }
+      .ghost-btn { height: 32px; padding: 0 10px; font-size: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
@@ -515,12 +531,21 @@ _INDEX_HTML = r"""
       }
     }
 
+    function fitTextarea() {
+      inputEl.style.height = 'auto';
+      const next = Math.min(inputEl.scrollHeight, 160);
+      inputEl.style.height = next + 'px';
+    }
+
     sendEl.addEventListener('click', sendMessage);
     inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
       }
+    });
+    inputEl.addEventListener('input', () => {
+      fitTextarea();
     });
 
     async function resetConversation() {
@@ -540,12 +565,19 @@ _INDEX_HTML = r"""
       }
       messagesEl.innerHTML = '';
       inputEl.value = '';
+      fitTextarea();
     }
 
     resetEl.addEventListener('click', resetConversation);
 
-    // Focus input on load
-    window.addEventListener('load', () => inputEl.focus());
+    // Focus and size input on load
+    window.addEventListener('load', () => { inputEl.focus(); fitTextarea(); scrollToBottom(); });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        // keep latest message visible when keyboard shows/hides
+        setTimeout(scrollToBottom, 50);
+      });
+    }
   </script>
 </body>
 </html>
