@@ -2,7 +2,7 @@ import asyncio
 import requests
 from agents import Agent, Runner, function_tool, set_tracing_disabled
 from agents.extensions.models.litellm_model import LitellmModel
-from rich.console import Console
+from rich.console import Console, Group
 from rich.markdown import Markdown
 from rich.panel import Panel
 from termcolor import colored
@@ -14,7 +14,13 @@ import warnings
 from pylatexenc.latex2text import LatexNodes2Text
 import readline
 import re
-from tableTools import fix_markdown_tables
+from tableTools import (
+    fix_markdown_tables,
+    linkify_bare_urls,
+    extract_markdown_tables,
+    build_rich_tables,
+)
+from typing import List, Tuple, Dict
 
 warnings.filterwarnings("ignore")
 
@@ -25,6 +31,8 @@ latex_converter = LatexNodes2Text()
 
 current_date = datetime.now().strftime("%A, %Y-%m-%d")
 current_time = datetime.now().strftime("%I:%M %p")
+
+from typing import List, Tuple, Dict
 
 async def main(model: str, api_key: str):
     agent = Agent(
@@ -80,18 +88,32 @@ async def main(model: str, api_key: str):
         if prompt.lower() == 'bye':
             print(colored("\nSee you later!", "magenta"))
             break
+
+        if prompt.strip().lower().startswith('/reset'):
+            # Clear conversation context and screen
+            history = []
+            console.clear()
+            print(colored("Context cleared.", "green"))
+            continue
         
         full_prompt = "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + prompt if history else prompt
         
         result = await Runner.run(agent, full_prompt, max_turns=20)
         response = result.final_output
         
-        # Convert LaTeX to Unicode
+        # Convert LaTeX to Unicode, fix tables, and linkify bare URLs
         processed_response = latex_converter.latex_to_text(response)
         processed_response = fix_markdown_tables(processed_response)
+        processed_response = linkify_bare_urls(processed_response)
+
+        # Extract markdown tables to render as rich tables
+        text_without_tables, parsed_tables = extract_markdown_tables(processed_response)
+        rich_tables = build_rich_tables(parsed_tables) if parsed_tables else []
+        
+        renderable = Group(Markdown(text_without_tables), *rich_tables) if rich_tables else Markdown(text_without_tables)
         
         print()
-        console.print(Panel(Markdown(processed_response), title="Agent", border_style="magenta", style="bold magenta"))
+        console.print(Panel(renderable, title="Agent", border_style="magenta", style="bold magenta"))
         
         history.append(f"User: {prompt}")
         history.append(f"Assistant: {response}")
