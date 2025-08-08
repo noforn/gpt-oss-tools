@@ -1,6 +1,6 @@
-# gpt-oss-tools
+# Chatty
 
-gpt-oss-tools is an intelligent agent that combines complex reasoning with several helpful utilities.  It uses the `agents` framework to run an interactive chat session and exposes tools for web search, URL browsing, weather lookups, and executing Python code in a sandboxed environment.
+Chatty is an intelligent agent that combines complex reasoning with several helpful utilities.  It uses the `agents` framework to run an interactive chat session and exposes tools for web search, URL browsing, weather lookups, and executing Python code in a sandboxed environment.
 
 ## Key Features
 
