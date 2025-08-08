@@ -402,10 +402,35 @@ _INDEX_HTML = r"""
       border-top: 1px solid var(--border); background: rgba(11, 15, 20, 0.65);
       backdrop-filter: blur(10px) saturate(140%);
     }
+    .field { position: relative; }
     textarea {
-      resize: none; height: 56px; max-height: 160px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+      resize: none; height: 56px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.6)); color: var(--text);
       outline: none; font-size: 14px; line-height: 1.45; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    /* Hide native placeholder color; we will render a custom shimmering placeholder overlay for better styling */
+    textarea::placeholder { color: transparent; }
+    textarea::-webkit-input-placeholder { color: transparent; }
+    textarea:-ms-input-placeholder { color: transparent; }
+
+    .fake-placeholder {
+      position: absolute;
+      left: 16px; right: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; line-height: 1.45;
+      pointer-events: none;
+      color: transparent;
+      background: linear-gradient(90deg, rgba(148,163,184,0.4) 0%, rgba(230,237,243,0.9) 20%, rgba(148,163,184,0.4) 40%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 2500ms linear infinite;
+      opacity: 0.8;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
     button {
       height: 56px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;
@@ -442,8 +467,9 @@ _INDEX_HTML = r"""
       .content { font-size: 13.5px; line-height: 1.45; }
       .content pre { font-size: 12px; padding: 10px; }
       .content code { font-size: 12.5px; }
-      textarea { height: 44px; font-size: 16px; padding: 10px 12px; line-height: 1.35; }
-      button { height: 44px; padding: 0 12px; font-size: 16px; }
+      textarea { height: 56px; font-size: 16px; padding: 14px 16px; line-height: 1.45; }
+      .fake-placeholder { font-size: 16px; left: 12px; right: 10px; }
+      button { height: 56px; padding: 0 12px; font-size: 16px; }
       .ghost-btn { height: 30px; padding: 0 10px; font-size: 12px; }
     }
     @media (max-width: 480px) {
@@ -455,14 +481,89 @@ _INDEX_HTML = r"""
       .content { font-size: 13px; line-height: 1.4; }
       .content pre { font-size: 11.5px; padding: 8px; }
       .content code { font-size: 12px; }
-      textarea { height: 42px; font-size: 16px; padding: 10px 10px; }
-      button { height: 42px; padding: 0 10px; font-size: 16px; }
+      textarea { height: 56px; font-size: 16px; padding: 14px 16px; }
+      .fake-placeholder { font-size: 16px; left: 10px; right: 8px; }
+      button { height: 56px; padding: 0 10px; font-size: 16px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       * { animation: none !important; transition: none !important; }
     }
-  </style>
+  
+/* --- Alignment & sizing fixes for input and send button --- */
+.input-bar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.field { width: 100%; }
+textarea#input { width: 100%; box-sizing: border-box; }
+.input-bar button { box-sizing: border-box; }
+
+/* Keep input bar padding aligned with messages padding on narrow screens */
+@media (max-width: 720px) {
+  .input-bar { padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0)); }
+}
+@media (max-width: 480px) {
+  .input-bar { padding: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0)); }
+}
+
+/* --- Desktop tweaks: compact input, match send button, and hide cursor on focus --- */
+@media (min-width: 721px) {
+  /* Match heights and make input slightly more compact */
+  .input-bar button { height: 48px; }
+  textarea#input { height: 48px; padding-top: 10px; padding-bottom: 10px; }
+}
+
+/* Hide caret and mouse cursor on desktop when the input is focused */
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  textarea#input:focus { caret-color: transparent; cursor: none; }
+}
+
+/* --- Desktop override: do NOT hide mouse cursor or caret on focus --- */
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  textarea#input:focus { caret-color: auto; cursor: text; }
+}
+
+/* --- Hide blinking caret on desktop focus (keep mouse pointer visible) --- */
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  textarea#input:focus { caret-color: transparent !important; cursor: text !important; }
+}
+
+/* --- Hide blinking caret on desktop (keep mouse visible) --- */
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  textarea#input, textarea#input:focus { caret-color: transparent; cursor: text; }
+}
+
+/* --- Reduce bottom padding for user/assistant bubbles, exclude typing indicator --- */
+.message.user:not(.typing) .bubble,
+.message.assistant:not(.typing) .bubble { padding-bottom: 8px; }
+
+@media (max-width: 720px) {
+  .message.user:not(.typing) .bubble,
+  .message.assistant:not(.typing) .bubble { padding-bottom: 7px; }
+}
+@media (max-width: 480px) {
+  .message.user:not(.typing) .bubble,
+  .message.assistant:not(.typing) .bubble { padding-bottom: 6px; }
+}
+
+/* --- Tighten bottom spacing in chat bubbles --- */
+.message.user:not(.typing) .bubble,
+.message.assistant:not(.typing) .bubble { padding-bottom: 6px; }
+
+/* Normalize inner element margins so last item doesn't add extra bottom space */
+.content p { margin: 0 0 8px; }
+.content > :last-child { margin-bottom: 0 !important; }
+
+/* Responsive tweaks */
+@media (max-width: 720px) {
+  .message.user:not(.typing) .bubble,
+  .message.assistant:not(.typing) .bubble { padding-bottom: 5px; }
+  .content p { margin-bottom: 6px; }
+}
+@media (max-width: 480px) {
+  .message.user:not(.typing) .bubble,
+  .message.assistant:not(.typing) .bubble { padding-bottom: 4px; }
+  .content p { margin-bottom: 5px; }
+}
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -477,7 +578,10 @@ _INDEX_HTML = r"""
       <div class="chat-card">
         <div id="messages" class="messages" role="log" aria-live="polite"></div>
         <div class="input-bar">
-          <textarea id="input" placeholder="Ask anything..."></textarea>
+          <div class="field">
+            <textarea id="input" placeholder="Ask anything..."></textarea>
+            <div id="fakePH" class="fake-placeholder">Ask anything…</div>
+          </div>
           <button id="send">Send</button>
         </div>
       </div>
@@ -492,6 +596,7 @@ _INDEX_HTML = r"""
     const inputEl = document.getElementById('input');
     const sendEl = document.getElementById('send');
     const resetEl = document.getElementById('reset');
+    const fakePH = document.getElementById('fakePH');
 
     let sessionId = localStorage.getItem('gpt_oss_session');
     if (!sessionId) {
@@ -528,6 +633,7 @@ _INDEX_HTML = r"""
     function addMessage(role, htmlContent, isTyping=false) {
       const wrap = document.createElement('div');
       wrap.className = `message ${role}`;
+      if (isTyping) { wrap.classList.add('typing'); }
       wrap.innerHTML = `
         <div class="bubble">
           <div class="role">${role === 'user' ? 'You' : 'Assistant'}</div>
@@ -564,7 +670,8 @@ _INDEX_HTML = r"""
           sessionId = data.session_id;
           localStorage.setItem('gpt_oss_session', sessionId);
         }
-        const reply = data.reply || data.error || 'No response.';
+        let reply = data.reply || data.error || 'No response.';
+        reply = typeof reply === 'string' ? reply.replace(/\s+$/,'') : reply;
         typingEl.querySelector('.content').innerHTML = renderMarkdown(reply);
         scrollToBottom();
       } catch (err) {
@@ -591,6 +698,7 @@ _INDEX_HTML = r"""
     });
     inputEl.addEventListener('input', () => {
       fitTextarea();
+      fakePH.style.display = inputEl.value ? 'none' : '';
     });
 
     async function resetConversation() {
@@ -616,14 +724,60 @@ _INDEX_HTML = r"""
     resetEl.addEventListener('click', resetConversation);
 
     // Focus and size input on load
-    window.addEventListener('load', () => { inputEl.focus(); fitTextarea(); scrollToBottom(); });
+    window.addEventListener('load', () => { inputEl.focus(); fitTextarea(); fakePH.style.display = inputEl.value ? 'none' : ''; scrollToBottom(); });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
         // keep latest message visible when keyboard shows/hides
         setTimeout(scrollToBottom, 50);
       });
     }
-  </script>
+  
+// --- Desktop typing redirect: let users type anywhere and it goes to the input ---
+(() => {
+  const desktop = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 721px)');
+  if (!desktop.matches) return;
+  const interactiveTags = new Set(['INPUT','TEXTAREA','SELECT','BUTTON']);
+  document.addEventListener('keydown', (e) => {
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (interactiveTags.has(tag)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const key = e.key;
+    const printable = key.length === 1 || key === ' ';
+
+    if (printable || key === 'Backspace' || key === 'Enter') {
+      e.preventDefault();
+      inputEl.focus();
+
+      const start = inputEl.selectionStart ?? inputEl.value.length;
+      const end = inputEl.selectionEnd ?? inputEl.value.length;
+
+      if (key === 'Backspace') {
+        if (start === end && start > 0) {
+          inputEl.value = inputEl.value.slice(0, start - 1) + inputEl.value.slice(end);
+          inputEl.selectionStart = inputEl.selectionEnd = start - 1;
+        } else {
+          inputEl.value = inputEl.value.slice(0, start) + inputEl.value.slice(end);
+          inputEl.selectionStart = inputEl.selectionEnd = start;
+        }
+      } else if (printable) {
+        const ch = key === ' ' ? ' ' : key;
+        inputEl.value = inputEl.value.slice(0, start) + ch + inputEl.value.slice(end);
+        inputEl.selectionStart = inputEl.selectionEnd = start + ch.length;
+      } else if (key === 'Enter') {
+        // Insert newline (send behavior remains tied to Enter in the input’s own keydown handler)
+        inputEl.value = inputEl.value.slice(0, start) + '\n' + inputEl.value.slice(end);
+        inputEl.selectionStart = inputEl.selectionEnd = start + 1;
+      }
+
+      // Update placeholder visibility and autosize if those exist
+      if (typeof fitTextarea === 'function') fitTextarea();
+      if (fakePH) fakePH.style.display = inputEl.value ? 'none' : '';
+      inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+})();
+</script>
 </body>
 </html>
 """
