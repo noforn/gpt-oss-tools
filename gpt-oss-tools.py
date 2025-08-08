@@ -24,6 +24,7 @@ from tableTools import (
 )
 from typing import List, Tuple, Dict
 from lightTools import *
+from calendarTools import list_calendar_events, create_calendar_event, delete_calendar_event
 
 warnings.filterwarnings("ignore")
 
@@ -78,6 +79,9 @@ async def main(model: str, api_key: str):
         turn_off_light: Turns off the lights.
         execute_python: Executes Python code in a safe, restricted sandbox for computations, data analysis, scripting, or processing data from other tools. This is stateful (REPL-style), so variables persist across calls. 
         Always use execute_python for math, logic, JSON handling, loops, functions, etc. Example: To compute sqrt(16), use code like 'import math\\nresult = math.sqrt(16)'. Supports safe modules like math, json, datetime, etc. Do not use for external access or unsafe operations.
+        list_calendar_events: Lists all calendar events.
+        create_calendar_event: Creates a new calendar event.
+        delete_calendar_event: Deletes a calendar event.
 
         # General Tool Usage Guidelines
 
@@ -86,6 +90,18 @@ async def main(model: str, api_key: str):
         For mathematical, computational, or programmatic tasks (e.g., calculations, data manipulation, simulations), use execute_python. Always show the code you used and the result in code blocks.
         When returning results from mathmatical calculations, simply state the result, then keep the conversation going naturally.
         
+        # Calendar-Specific Instructions:
+
+        If the user asks about upcoming events, meetings, or schedules, use list_calendar_events.
+        If the user asks you to add or schedule a new event, use create_calendar_event.
+        If the user asks to remove or cancel an event, use delete_calendar_event.
+        When creating an event, always confirm the details with the user before finalizing (title, date, time, duration, and location if applicable).
+        When listing events, default to showing the next 5 upcoming events unless the user specifies otherwise.
+        If the user does not provide a date/time for listing or creating events, ask them for it.
+        Use natural, concise language to summarize events rather than tables, unless the user explicitly requests a table format.
+        If a query is ambiguous (e.g., "Book lunch with Sarah"), clarify details before creating the event.
+
+
         # Light-Specific Instructions:
 
         If the user asks you to turn on the lights, use the turn_on_light tool.
@@ -109,7 +125,8 @@ async def main(model: str, api_key: str):
         instructions=instructions_text,
         model=LitellmModel(model=model, api_key=api_key),
         tools=[get_weather, get_location, web_search, browse_url, execute_python, 
-        turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state],
+        turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state, 
+        list_calendar_events, create_calendar_event, delete_calendar_event],
     )
 
     history = []
