@@ -44,7 +44,7 @@ gpt-oss-tools is an intelligent agent that combines complex reasoning with sever
      ```
    - **Web UI**
      ```bash
-     python -c "from web_ui import run_web_ui; run_web_ui('gpt-oss:20b', '<api-key>')"
+     python gpt-oss-tools.py --web --host 127.0.0.1 --port 7860
      ```
 5. Type your questions or commands. In the CLI, enter `bye` to exit the session.
 
