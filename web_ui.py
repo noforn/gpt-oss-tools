@@ -189,6 +189,7 @@ _INDEX_HTML = r"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
   <meta name="theme-color" content="#0b0f14" />
@@ -563,6 +564,76 @@ textarea#input { width: 100%; box-sizing: border-box; }
   .message.assistant:not(.typing) .bubble { padding-bottom: 4px; }
   .content p { margin-bottom: 5px; }
 }
+
+
+/* --- Gentle color-shifted background using existing palette --- */
+body { animation: none !important; } /* cancel any previous body bg animations */
+
+/* Two fixed overlays that crossfade very slowly between accent hues */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* Keep it subtle; use existing accent colors only */
+  background:
+    radial-gradient(1200px 600px at 12% -6%, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 60%),
+    radial-gradient(1000px 520px at 112% 12%, color-mix(in srgb, var(--accent-2) 26%, transparent) 0%, transparent 55%);
+  opacity: 0.22;
+}
+
+/* Layer B swaps the accents so the crossfade feels like a color shift */
+body::after {
+  background:
+    radial-gradient(1200px 600px at 12% -6%, color-mix(in srgb, var(--accent-2) 26%, transparent) 0%, transparent 60%),
+    radial-gradient(1000px 520px at 112% 12%, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 55%);
+  opacity: 0;
+}
+
+/* Slow, smooth crossfade */
+@keyframes bgCrossfadeA { 0%, 100% { opacity: 0.24; } 50% { opacity: 0.10; } }
+@keyframes bgCrossfadeB { 0%, 100% { opacity: 0.10; } 50% { opacity: 0.24; } }
+
+body::before { animation: bgCrossfadeA 80s ease-in-out infinite; }
+body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
+
+/* Ensure content paints above overlays */
+.wrap, header, main, .chat-card { position: relative; z-index: 1; }
+
+/* Respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after { animation: none !important; opacity: 0.18; }
+}
+
+/* Empty chat placeholder */
+#messages:empty::before {
+  content: "What can I help with?";
+  color: #ffffff;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Enhanced empty chat placeholder: centered and larger */
+#messages:empty {
+  position: relative;
+  min-height: 240px; /* ensures there's room to center the text */
+}
+
+#messages:empty::before {
+  content: "What can I help with?";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  text-align: center;
+  color: #ffffff;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: clamp(24px, 5vw, 40px); /* much larger, responsive */
+  line-height: 1.2;
+}
+
 </style>
 </head>
 <body>
