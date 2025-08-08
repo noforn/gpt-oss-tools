@@ -46,7 +46,7 @@ gpt-oss-tools is an intelligent agent that combines complex reasoning with sever
      ```bash
      python gpt-oss-tools.py --web --host 127.0.0.1 --port 7860
      ```
-5. Type your questions or commands. In the CLI, enter `bye` to exit the session or /reset to clear context.
+5. Type your questions or commands. In the CLI, enter `bye` to exit the session or '/reset' to clear context.
 
 ## License
 
