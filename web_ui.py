@@ -81,6 +81,7 @@ def build_instructions() -> str:
         If the user asks you to set the color of the lights, use the set_light_hsv tool. Use get_light_state to check the current brightness and keep it the same when setting the color.
         If the user asks you to get the state of the lights, use the get_light_state tool.
         If it would be useful to check the state of the lights before using any of the other light tools, use the get_light_state tool.
+        Avoid using tables when describing the state of the lights, use natural language instead.
 
         # Weather-Specific Instructions:
 
@@ -428,6 +429,12 @@ _INDEX_HTML = r"""
     textarea::-webkit-input-placeholder { color: transparent; }
     textarea:-ms-input-placeholder { color: transparent; }
 
+/* Hide caret on touch devices when the field is empty and showing the placeholder */
+@media (hover: none) and (pointer: coarse) {
+  textarea#input:placeholder-shown { caret-color: transparent; }
+  textarea#input:placeholder-shown:focus { caret-color: transparent; }
+}
+
     .fake-placeholder {
       position: absolute;
       left: 16px; right: 12px; top: 50%; transform: translateY(-50%);
@@ -682,6 +689,15 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
     const sendEl = document.getElementById('send');
     const resetEl = document.getElementById('reset');
     const fakePH = document.getElementById('fakePH');
+    // --- Mobile caret hider: keep caret hidden on touch when placeholder is visible ---
+    const _isTouch = window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches;
+    function _updateCaret() {
+      if (!_isTouch) return;
+      inputEl.style.caretColor = inputEl.value ? '' : 'transparent';
+    }
+    inputEl.addEventListener('focus', _updateCaret);
+    inputEl.addEventListener('blur', () => { if (_isTouch) inputEl.style.caretColor = ''; });
+
 
     let sessionId = localStorage.getItem('gpt_oss_session');
     if (!sessionId) {
@@ -784,6 +800,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
     inputEl.addEventListener('input', () => {
       fitTextarea();
       fakePH.style.display = inputEl.value ? 'none' : '';
+      _updateCaret();
     });
 
     async function resetConversation() {
@@ -809,7 +826,8 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
     resetEl.addEventListener('click', resetConversation);
 
     // Focus and size input on load
-    window.addEventListener('load', () => { inputEl.focus(); fitTextarea(); fakePH.style.display = inputEl.value ? 'none' : ''; scrollToBottom(); });
+    window.addEventListener('load', () => { inputEl.focus(); fitTextarea(); fakePH.style.display = inputEl.value ? 'none' : '';
+      _updateCaret(); scrollToBottom(); });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
         // keep latest message visible when keyboard shows/hides
@@ -858,6 +876,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
       // Update placeholder visibility and autosize if those exist
       if (typeof fitTextarea === 'function') fitTextarea();
       if (fakePH) fakePH.style.display = inputEl.value ? 'none' : '';
+      _updateCaret();
       inputEl.dispatchEvent(new Event('input', { bubbles: true }));
     }
   });
