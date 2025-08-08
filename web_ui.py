@@ -190,7 +190,14 @@ _INDEX_HTML = r"""
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0b0f14" />
+  <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: light)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Chatty" />
+  <meta name="color-scheme" content="dark" />
   <title>Chatty</title>
   <style>
     :root {
@@ -209,7 +216,7 @@ _INDEX_HTML = r"""
     }
 
     * { box-sizing: border-box; }
-    html { height: -webkit-fill-available; }
+    html { height: -webkit-fill-available; background-color: var(--bg-0); }
     body {
       margin: 0;
       color: var(--text);
@@ -223,6 +230,8 @@ _INDEX_HTML = r"""
       min-height: 100dvh;
       min-height: -webkit-fill-available;
       overflow: hidden;
+      background-color: var(--bg-0);
+      overscroll-behavior-y: none;
     }
 
     /* Subtle texture grid overlay */
@@ -237,6 +246,21 @@ _INDEX_HTML = r"""
       background-size: 40px 40px;
       mix-blend-mode: overlay;
       opacity: 0.25;
+    }
+
+    /* iOS Safari: avoid white flashes and ensure background paints under UI chrome */
+    @supports (-webkit-touch-callout: none) {
+      body { background-attachment: scroll; }
+    }
+
+    /* Paint the top safe-area explicitly to avoid any white bands under iOS chrome */
+    .bg-top-safe {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: env(safe-area-inset-top, 0);
+      background: linear-gradient(180deg, var(--bg-0), rgba(11, 15, 20, 0.7));
+      z-index: 1;
+      pointer-events: none;
     }
 
     .wrap {
@@ -254,7 +278,7 @@ _INDEX_HTML = r"""
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: calc(12px + env(safe-area-inset-top, 0)) 18px 12px 18px;
+      padding: calc(10px + env(safe-area-inset-top, 0)) 18px 10px 18px;
       background: linear-gradient(180deg, rgba(11, 15, 20, 0.9), rgba(11, 15, 20, 0.65));
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(10px) saturate(160%);
@@ -342,7 +366,7 @@ _INDEX_HTML = r"""
 
     .role { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
 
-    .content { color: var(--text); white-space: pre-wrap; line-height: 1.55; }
+    .content { color: var(--text); white-space: pre-wrap; line-height: 1.55; overflow-wrap: anywhere; word-break: break-word; }
     .content code { background: rgba(148,163,184,0.15); padding: 0 6px; border-radius: 6px; }
     .content pre { background: #0b1220; border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-x: auto; }
     .content a { color: var(--accent-2); text-decoration: none; border-bottom: 1px dotted rgba(34, 211, 238, 0.4); }
@@ -374,7 +398,7 @@ _INDEX_HTML = r"""
 
     .input-bar {
       display: grid; grid-template-columns: 1fr auto; gap: 12px;
-      padding: 14px; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0));
+      padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
       border-top: 1px solid var(--border); background: rgba(11, 15, 20, 0.65);
       backdrop-filter: blur(10px) saturate(140%);
     }
@@ -406,14 +430,33 @@ _INDEX_HTML = r"""
     .ghost-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
 
     @media (max-width: 720px) {
-      header { gap: 10px; }
-      h1 { font-size: 15px; }
-      main { padding: 12px; }
+      body { font-size: 14px; }
+      header { gap: 8px; }
+      h1 { font-size: 14px; }
+      main { padding: 10px; }
       .chat-card { border-radius: 14px; }
-      .messages { padding: 12px; padding-bottom: 6px; }
-      textarea { height: 52px; font-size: 15px; }
-      button { height: 52px; padding: 0 16px; }
-      .ghost-btn { height: 32px; padding: 0 10px; font-size: 12px; }
+      .messages { padding: 10px; padding-bottom: 6px; }
+      .message { margin-bottom: 12px; }
+      .bubble { padding: 9px 11px; }
+      .role { font-size: 11px; letter-spacing: 0.04em; }
+      .content { font-size: 13.5px; line-height: 1.45; }
+      .content pre { font-size: 12px; padding: 10px; }
+      .content code { font-size: 12.5px; }
+      textarea { height: 44px; font-size: 16px; padding: 10px 12px; line-height: 1.35; }
+      button { height: 44px; padding: 0 12px; font-size: 16px; }
+      .ghost-btn { height: 30px; padding: 0 10px; font-size: 12px; }
+    }
+    @media (max-width: 480px) {
+      body { font-size: 13px; }
+      main { padding: 8px; }
+      .messages { padding: 8px; padding-bottom: 4px; }
+      .chat-card { border-radius: 12px; }
+      .role { font-size: 10px; letter-spacing: 0.03em; }
+      .content { font-size: 13px; line-height: 1.4; }
+      .content pre { font-size: 11.5px; padding: 8px; }
+      .content code { font-size: 12px; }
+      textarea { height: 42px; font-size: 16px; padding: 10px 10px; }
+      button { height: 42px; padding: 0 10px; font-size: 16px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -423,6 +466,7 @@ _INDEX_HTML = r"""
 </head>
 <body>
   <div class="wrap">
+    <div class="bg-top-safe"></div>
     <header>
       <div class="logo"></div>
       <h1>Chatty</h1>
@@ -533,7 +577,8 @@ _INDEX_HTML = r"""
 
     function fitTextarea() {
       inputEl.style.height = 'auto';
-      const next = Math.min(inputEl.scrollHeight, 160);
+      const limit = (window.innerHeight || 800) < 740 ? 120 : 160;
+      const next = Math.min(inputEl.scrollHeight, limit);
       inputEl.style.height = next + 'px';
     }
 
