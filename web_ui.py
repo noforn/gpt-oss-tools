@@ -10,7 +10,7 @@ import uvicorn
 from agents import Agent, Runner
 from agents.extensions.models.litellm_model import LitellmModel
 
-from searchTools import web_search, browse_url
+from searchTools import web_search, browse_url, set_current_session_id, get_tool_status, set_fallback_session_id
 from weatherTools import get_location, get_weather
 from pythonTools import execute_python
 from lightTools import *
@@ -121,6 +121,12 @@ def create_app() -> FastAPI:
     async def health():
         return {"ok": True}
 
+    @app.get("/api/status")
+    async def status_endpoint(session_id: str = ""):
+        if not session_id:
+            return {"searching": False}
+        return get_tool_status(session_id)
+
     @app.get("/", response_class=HTMLResponse)
     async def index(_: Request):
         # Single-file app: dark theme, subtle animations, textures
@@ -133,9 +139,10 @@ def create_app() -> FastAPI:
         if not user_message:
             return JSONResponse({"error": "Empty message"}, status_code=400)
 
-        # Ensure session
-        if not session_id or session_id not in session_store:
+        # Ensure session (respect client-provided id so the UI can poll status)
+        if not session_id:
             session_id = str(uuid.uuid4())
+        if session_id not in session_store:
             session_store[session_id] = {
                 "agent": create_agent(SERVER_MODEL, SERVER_API_KEY),
                 "history": [],
@@ -143,6 +150,13 @@ def create_app() -> FastAPI:
         session = session_store[session_id]
         history = session["history"]
         agent: Agent = session["agent"]
+
+        # Bind session id into tool context so tools can expose status to the UI
+        try:
+            set_current_session_id(session_id)
+            set_fallback_session_id(session_id)
+        except Exception:
+            pass
 
         full_prompt = (
             "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + user_message
@@ -445,15 +459,26 @@ _INDEX_HTML = r"""
       background-size: 200% 100%;
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: shimmer 2500ms linear infinite;
+      animation: shimmer 6000ms linear infinite; /* slowed shimmer */
       opacity: 0.8;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* Shimmer for "Searching…" status inside the typing bubble */
+    .status-shimmer {
+      display: inline-block;
+      background: linear-gradient(90deg, rgba(148,163,184,0.4) 0%, rgba(230,237,243,0.9) 20%, rgba(148,163,184,0.4) 40%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 2000ms linear infinite;
     }
 
     @keyframes shimmer {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
+
+    
     button {
       height: 56px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;
       color: #060910; font-weight: 600; letter-spacing: 0.3px;
@@ -701,7 +726,12 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
 
     let sessionId = localStorage.getItem('gpt_oss_session');
     if (!sessionId) {
-      sessionId = '';
+      try {
+        sessionId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : 'sess_' + Math.random().toString(36).slice(2);
+      } catch (_) {
+        sessionId = 'sess_' + Math.random().toString(36).slice(2);
+      }
+      localStorage.setItem('gpt_oss_session', sessionId);
     }
 
     function escapeHtml(html) {
@@ -746,6 +776,49 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
       return wrap;
     }
 
+    // Status polling to show "Searching…" shimmer when tools are active
+    let _statusTimer = null;
+    function _setTypingSearching(el, searching) {
+      const content = el && el.querySelector('.content');
+      if (!content) return;
+      if (searching) {
+        content.innerHTML = `<span class="status-shimmer">Searching…</span>`;
+      } else {
+        // Only reset to dots if we are still in typing state; if response already rendered, skip
+        const parent = el.closest('.message');
+        if (parent && parent.classList.contains('typing')) {
+          content.innerHTML = `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
+        }
+      }
+    }
+    function startStatusPolling(typingEl) {
+      stopStatusPolling();
+      // Immediate check so UI flips to Searching… without delay
+      (async () => {
+        try {
+          const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
+          const data = await res.json();
+          _setTypingSearching(typingEl, !!data.searching);
+        } catch (e) {}
+      })();
+      // Then continue polling
+      _statusTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
+          const data = await res.json();
+          _setTypingSearching(typingEl, !!data.searching);
+        } catch (e) {
+          // ignore errors; keep default typing UI
+        }
+      }, 600);
+    }
+    function stopStatusPolling() {
+      if (_statusTimer) {
+        clearInterval(_statusTimer);
+        _statusTimer = null;
+      }
+    }
+
     function scrollToBottom() {
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -757,8 +830,13 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
       sendEl.disabled = true;
       const userEl = addMessage('user', renderMarkdown(text));
       inputEl.value = '';
+      // Ensure placeholder returns when input is cleared after sending
+      fitTextarea();
+      fakePH.style.display = inputEl.value ? 'none' : '';
+      _updateCaret();
 
       const typingEl = addMessage('assistant', '', true);
+      startStatusPolling(typingEl);
 
       try {
         const res = await fetch('/api/chat', {
@@ -779,6 +857,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
         typingEl.querySelector('.content').innerHTML = renderMarkdown('Error: ' + (err?.message || err));
         scrollToBottom();
       } finally {
+        stopStatusPolling();
         sendEl.disabled = false;
       }
     }
@@ -821,6 +900,9 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
       messagesEl.innerHTML = '';
       inputEl.value = '';
       fitTextarea();
+      // Show placeholder again after reset
+      fakePH.style.display = inputEl.value ? 'none' : '';
+      _updateCaret();
     }
 
     resetEl.addEventListener('click', resetConversation);
