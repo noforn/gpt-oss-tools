@@ -91,9 +91,10 @@ async def main(model: str, api_key: str):
         If the user asks you to turn on the lights, use the turn_on_light tool.
         If the user asks you to turn off the lights, use the turn_off_light tool.
         If the user asks you to set the brightness of the lights, use the set_light_brightness tool.
-        If the user asks you to set the color of the lights, use the set_light_hsv tool.
+        If the user asks you to set the color of the lights, use the set_light_hsv tool. Use get_light_state to check the current brightness and keep it the same when setting the color.
         If the user asks you to get the state of the lights, use the get_light_state tool.
         If it would be useful to check the state of the lights before using any of the other light tools, use the get_light_state tool.
+        Avoid using tables when describing the state of the lights, use natural language instead.
 
         # Weather-Specific Instructions:
 
