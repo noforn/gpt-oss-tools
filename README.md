@@ -1,6 +1,6 @@
 # gpt-oss-tools
 
-gpt-oss-tools is a command-line assistant that combines a language model with several helpful utilities.  It uses the `agents` framework to run an interactive chat session and exposes tools for web search, URL browsing, weather lookups, and executing Python code in a sandboxed environment.
+gpt-oss-tools is an intelligent agent that combines gpt-oss with several helpful utilities.  It uses the `agents` framework to run an interactive chat session and exposes tools for web search, URL browsing, weather lookups, and executing Python code in a sandboxed environment.
 
 ## Key Features
 
