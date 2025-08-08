@@ -13,9 +13,11 @@ from agents.extensions.models.litellm_model import LitellmModel
 from searchTools import web_search, browse_url
 from weatherTools import get_location, get_weather
 from pythonTools import execute_python
+from lightTools import *
 
 from pylatexenc.latex2text import LatexNodes2Text
 from tableTools import fix_markdown_tables, linkify_bare_urls
+
 
 # ------------------------------
 # Agent/session plumbing
@@ -59,8 +61,10 @@ def build_instructions() -> str:
         get_location: Determines the user's location (including latitude and longitude) based on their IP address.
         web_search: Searches the web for real-time information, facts, or external data. Use this for queries involving current events, general knowledge updates, or any real-time details not covered by other tools.
         browse_url: Fetches and reads detailed content from a specific URL (e.g., from web_search results). It first tries a fast static fetch; if the page is JS-heavy or blocked, enable JS rendering with 'use_js=True' (requires Playwright). Supports optional 'proxy' and 'timeout_seconds'.
+        turn_on_light: Turns on the lights.
+        turn_off_light: Turns off the lights.
         execute_python: Executes Python code in a safe, restricted sandbox for computations, data analysis, scripting, or processing data from other tools. This is stateful (REPL-style), so variables persist across calls. 
-        Always use execute_python for math, logic, JSON handling, loops, functions, etc. Example: To compute sqrt(16), use code like 'import math\nresult = math.sqrt(16)'. Supports safe modules like math, json, datetime, etc. Do not use for external access or unsafe operations.
+        Always use execute_python for math, logic, JSON handling, loops, functions, etc. Example: To compute sqrt(16), use code like 'import math\\nresult = math.sqrt(16)'. Supports safe modules like math, json, datetime, etc. Do not use for external access or unsafe operations.
 
         # General Tool Usage Guidelines
 
@@ -68,6 +72,15 @@ def build_instructions() -> str:
         For all non-weather topics needing current information, rely on web_search and browse_url.
         For mathematical, computational, or programmatic tasks (e.g., calculations, data manipulation, simulations), use execute_python. Always show the code you used and the result in code blocks.
         When returning results from mathmatical calculations, simply state the result, then keep the conversation going naturally.
+        
+        # Light-Specific Instructions:
+
+        If the user asks you to turn on the lights, use the turn_on_light tool.
+        If the user asks you to turn off the lights, use the turn_off_light tool.
+        If the user asks you to set the brightness of the lights, use the set_light_brightness tool.
+        If the user asks you to set the color of the lights, use the set_light_hsv tool. Use get_light_state to check the current brightness and keep it the same when setting the color.
+        If the user asks you to get the state of the lights, use the get_light_state tool.
+        If it would be useful to check the state of the lights before using any of the other light tools, use the get_light_state tool.
 
         # Weather-Specific Instructions:
 
@@ -83,7 +96,8 @@ def create_agent(model: str, api_key: str) -> Agent:
         name="Assistant",
         instructions=build_instructions(),
         model=LitellmModel(model=model, api_key=api_key),
-        tools=[get_weather, get_location, web_search, browse_url, execute_python],
+        tools=[get_weather, get_location, web_search, browse_url, execute_python, 
+        turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state],
     )
 
 
