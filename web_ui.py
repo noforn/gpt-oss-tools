@@ -239,9 +239,7 @@ _INDEX_HTML = r"""
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
-  <meta name="theme-color" content="#0b0f14" />
-  <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f141a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Chatty" />
@@ -264,21 +262,23 @@ _INDEX_HTML = r"""
     }
 
     * { box-sizing: border-box; }
-    html { height: -webkit-fill-available; background-color: var(--bg-0); }
+    html {
+      height: -webkit-fill-available;
+      background: linear-gradient(300deg,#0b0f14,#0f141a,#121923,#1b2840) !important;
+      background-size: 240% 240% !important;
+      animation: gradient-animation 24s ease infinite !important;
+    }
     body {
       margin: 0;
       color: var(--text);
-      background: radial-gradient(1200px 600px at 10% -10%, #1b2840 0%, transparent 60%),
-                  radial-gradient(1000px 500px at 110% 10%, #1b3640 0%, transparent 55%),
-                  linear-gradient(180deg, var(--bg-0), var(--bg-1));
-      background-attachment: fixed;
+      /* Use a solid background that matches the theme to avoid iOS safe-area black fallbacks */
+      background: var(--bg-1) !important;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       min-height: 100dvh;
       min-height: -webkit-fill-available;
       overflow: hidden;
-      background-color: var(--bg-0);
       overscroll-behavior-y: none;
     }
 
@@ -301,13 +301,25 @@ _INDEX_HTML = r"""
       body { background-attachment: scroll; }
     }
 
-    /* Paint the top safe-area explicitly to avoid any white bands under iOS chrome */
+    /* Paint the top safe-area explicitly with a static color (no animation) */
     .bg-top-safe {
       position: fixed;
       top: 0; left: 0; right: 0;
       height: env(safe-area-inset-top, 0);
-      background: linear-gradient(180deg, var(--bg-0), rgba(11, 15, 20, 0.7));
-      z-index: 1;
+      height: constant(safe-area-inset-top, 0);
+      background: var(--bg-1);
+      z-index: 1000; /* above header */
+      pointer-events: none;
+    }
+
+    /* Bottom safe area overlay (static color to match theme) */
+    .bg-bottom-safe {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: env(safe-area-inset-bottom, 0);
+      height: constant(safe-area-inset-bottom, 0);
+      background: var(--bg-1);
+      z-index: 1000; /* above input bar */
       pointer-events: none;
     }
 
@@ -327,9 +339,9 @@ _INDEX_HTML = r"""
       align-items: center;
       gap: 12px;
       padding: calc(10px + env(safe-area-inset-top, 0)) 18px 10px 18px;
-      background: linear-gradient(180deg, rgba(11, 15, 20, 0.9), rgba(11, 15, 20, 0.65));
+      background: transparent;
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(10px) saturate(160%);
+      backdrop-filter: none;
       z-index: 10;
     }
 
@@ -510,14 +522,14 @@ _INDEX_HTML = r"""
 
     .ghost-btn {
       height: 36px; padding: 0 12px; margin-left: auto;
-      background: rgba(255,255,255,0.04);
+      background: transparent;
       color: var(--muted);
       border: 1px solid var(--border);
       border-radius: 10px;
       box-shadow: none;
       transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
     }
-    .ghost-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .ghost-btn:hover { background: transparent; color: var(--text); }
 
     @media (max-width: 720px) {
       body { font-size: 14px; }
@@ -576,24 +588,8 @@ textarea#input { width: 100%; box-sizing: border-box; }
   textarea#input { height: 48px; padding-top: 10px; padding-bottom: 10px; }
 }
 
-/* Hide caret and mouse cursor on desktop when the input is focused */
-@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
-  textarea#input:focus { caret-color: transparent; cursor: none; }
-}
-
-/* --- Desktop override: do NOT hide mouse cursor or caret on focus --- */
 @media (hover: hover) and (pointer: fine) and (min-width: 721px) {
   textarea#input:focus { caret-color: auto; cursor: text; }
-}
-
-/* --- Hide blinking caret on desktop focus (keep mouse pointer visible) --- */
-@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
-  textarea#input:focus { caret-color: transparent !important; cursor: text !important; }
-}
-
-/* --- Hide blinking caret on desktop (keep mouse visible) --- */
-@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
-  textarea#input, textarea#input:focus { caret-color: transparent; cursor: text; }
 }
 
 /* --- Reduce bottom padding for user/assistant bubbles, exclude typing indicator --- */
@@ -698,11 +694,50 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
   line-height: 1.2;
 }
 
+/* Animated gradient background */
+body.gradient-background {
+  background: linear-gradient(300deg,#0b0f14,#0f141a,#121923,#1b2840);
+  background-size: 240% 240%;
+  animation: gradient-animation 24s ease infinite !important;
+  background-attachment: fixed;
+}
+
+/* Disable existing overlays when gradient is active */
+body.gradient-background::before,
+body.gradient-background::after {
+  content: none !important;
+}
+
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Keep chat container static regardless of animated page background */
+.chat-card {
+  background: var(--assistant) !important; /* #111827 */
+  backdrop-filter: none !important;
+}
+
+/* Fixed full-viewport gradient layer to ensure safe areas are painted on iOS */
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(300deg,#0b0f14,#0f141a,#121923,#1b2840);
+  background-size: 240% 240%;
+  animation: gradient-animation 24s ease infinite;
+}
+
 </style>
 </head>
-<body>
+<body class="gradient-background">
+  <div class="bg-top-safe"></div>
+  <div class="bg-bottom-safe"></div>
+  <div class="page-bg"></div>
   <div class="wrap">
-    <div class="bg-top-safe"></div>
     <header>
       <div class="logo"></div>
       <h1>Chatty</h1>
