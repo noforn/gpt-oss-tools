@@ -210,7 +210,7 @@ def create_app() -> FastAPI:
         processed = process_response_text(response_text)
 
         history.append(f"User: {user_message}")
-        history.append(f"Assistant: {response_text}")
+        history.append(f"Iris: {response_text}")
 
         return JSONResponse({"reply": processed, "session_id": session_id})
 
@@ -249,7 +249,7 @@ _INDEX_HTML = r"""
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
-  <meta name="theme-color" content="#0f141a" />
+  <meta name="theme-color" content="#141a24" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Iris" />
@@ -266,7 +266,7 @@ _INDEX_HTML = r"""
   <style>
     :root {
       --bg-0: #0b0f14;
-      --bg-1: #0f141a;
+      --bg-1: #141a24;
       --bg-2: #121923;
       --text: #e6edf3;
       --muted: #94a3b8;
@@ -275,7 +275,7 @@ _INDEX_HTML = r"""
       --card: rgba(21, 27, 36, 0.7);
       --border: rgba(148, 163, 184, 0.15);
       --user: #1f2937;
-      --assistant: #111827;
+      --assistant: #181f31;
       --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
     }
 
@@ -368,8 +368,9 @@ _INDEX_HTML = r"""
       height: 12px;
       border-radius: 50%;
       background: radial-gradient(circle at 30% 30%, #c0d2f1, #a6b0f7, #8caef7, #a3a5f6);
+      background-size: 120% 120%;
+      animation: gradient-animation 12s ease infinite, pulse 3s ease-in-out infinite;
       box-shadow: 0 0 25px rgba(163, 165, 246, 0.6), 0 0 25px rgba(192, 210, 241, 0.4);
-      animation: pulse 3s ease-in-out infinite;
     }
 
 
@@ -487,6 +488,9 @@ _INDEX_HTML = r"""
       background: linear-gradient(180deg, rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.6)); color: var(--text);
       outline: none; font-size: 14px; line-height: 1.45; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
+    /* Hide textarea scrollbars but keep scroll functionality */
+    textarea { overflow: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    textarea::-webkit-scrollbar { display: none; }
     /* Hide native placeholder color; we will render a custom shimmering placeholder overlay for better styling */
     textarea::placeholder { color: transparent; }
     textarea::-webkit-input-placeholder { color: transparent; }
@@ -717,7 +721,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
 
 /* Animated gradient background */
 body.gradient-background {
-  background: linear-gradient(300deg,#0b0f14,#0f141a,#121923,#1b2840);
+  background: linear-gradient(300deg,#151b22,#10151b,#18202a,#23314f);
   background-size: 240% 240%;
   animation: gradient-animation 24s ease infinite !important;
   background-attachment: fixed;
@@ -747,7 +751,7 @@ body.gradient-background::after {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(300deg,#0b0f14,#0f141a,#121923,#1b2840);
+  background: linear-gradient(300deg,#151b22,#10151b,#18202a,#23314f);
   background-size: 240% 240%;
   animation: gradient-animation 24s ease infinite;
 }
@@ -790,12 +794,32 @@ body.gradient-background::after {
     const fakePH = document.getElementById('fakePH');
     // --- Mobile caret hider: keep caret hidden on touch when placeholder is visible ---
     const _isTouch = window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches;
+    // Desktop detection (fine pointer + hover + wide screens)
+    const _isDesktop = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine) and (min-width: 721px)').matches;
+    // Track the baseline (original) height on desktop to snap back when content shrinks
+    let _desktopBaseHeight = 0;
     function _updateCaret() {
       if (!_isTouch) return;
       inputEl.style.caretColor = inputEl.value ? '' : 'transparent';
     }
     inputEl.addEventListener('focus', _updateCaret);
     inputEl.addEventListener('blur', () => { if (_isTouch) inputEl.style.caretColor = ''; });
+
+
+      // Keep default paddings/line-height so the fixed-height textarea scrolls naturally
+      function alignCaretToCenter() {
+        if (!inputEl) return;
+        try {
+          inputEl.style.lineHeight = '';
+          inputEl.style.paddingTop = '';
+          inputEl.style.paddingBottom = '';
+        } catch (_) {
+          // best-effort; ignore failures
+        }
+      }
+
+      // Re-align on focus
+      inputEl.addEventListener('focus', alignCaretToCenter);
 
 
     let sessionId = localStorage.getItem('gpt_oss_session');
@@ -946,12 +970,12 @@ body.gradient-background::after {
       }
     }
 
-    function fitTextarea() {
-      inputEl.style.height = 'auto';
-      const limit = (window.innerHeight || 800) < 740 ? 120 : 160;
-      const next = Math.min(inputEl.scrollHeight, limit);
-      inputEl.style.height = next + 'px';
-    }
+      function fitTextarea() {
+        // Keep textarea height fixed (CSS-controlled) and let content scroll.
+        // Clear any inline height that might have been set previously.
+        inputEl.style.height = '';
+        alignCaretToCenter();
+      }
 
     sendEl.addEventListener('click', sendMessage);
     inputEl.addEventListener('keydown', (e) => {
@@ -992,14 +1016,32 @@ body.gradient-background::after {
     resetEl.addEventListener('click', resetConversation);
 
     // Focus and size input on load
-    window.addEventListener('load', () => { inputEl.focus(); fitTextarea(); fakePH.style.display = inputEl.value ? 'none' : '';
-      _updateCaret(); scrollToBottom(); });
+    window.addEventListener('load', () => {
+      inputEl.focus();
+      fitTextarea();
+      fakePH.style.display = inputEl.value ? 'none' : '';
+      _updateCaret();
+        alignCaretToCenter();
+      scrollToBottom();
+      if (_isDesktop) {
+        // capture baseline after initial layout
+        setTimeout(() => { _desktopBaseHeight = inputEl.clientHeight || _desktopBaseHeight || 48; }, 0);
+      }
+    });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
         // keep latest message visible when keyboard shows/hides
         setTimeout(scrollToBottom, 50);
+        // re-align caret center when viewport changes
+        alignCaretToCenter();
       });
     }
+    window.addEventListener('resize', () => {
+      if (_isDesktop) {
+        _desktopBaseHeight = inputEl.clientHeight || _desktopBaseHeight;
+      }
+      alignCaretToCenter();
+    });
   
 // --- Desktop typing redirect: let users type anywhere and it goes to the input ---
 (() => {

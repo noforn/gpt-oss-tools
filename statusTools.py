@@ -95,3 +95,6 @@ def mark_checking_location() -> None:
 
 def mark_getting_weather() -> None:
     _mark_status("Getting weather…", "weather")
+
+def mark_checking_status() -> None:
+    _mark_status("Checking status…", "status")
