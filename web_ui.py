@@ -132,7 +132,7 @@ SERVER_API_KEY = ""
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Chatty", version="1.0.0")
+    app = FastAPI(title="Iris", version="1.0.0")
 
     @app.get("/_health")
     async def health():
@@ -242,9 +242,9 @@ _INDEX_HTML = r"""
   <meta name="theme-color" content="#0f141a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Chatty" />
+  <meta name="apple-mobile-web-app-title" content="Iris" />
   <meta name="color-scheme" content="dark" />
-  <title>Chatty</title>
+  <title>Iris</title>
   <style>
     :root {
       --bg-0: #0b0f14;
@@ -740,7 +740,7 @@ body.gradient-background::after {
   <div class="wrap">
     <header>
       <div class="logo"></div>
-      <h1>Chatty</h1>
+      <h1>Iris</h1>
       <button id="reset" class="ghost-btn" title="Reset conversation">Reset</button>
     </header>
 
