@@ -367,10 +367,11 @@ _INDEX_HTML = r"""
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, var(--accent), var(--accent-2));
-      box-shadow: 0 0 25px rgba(167, 139, 250, 0.6), 0 0 25px rgba(34, 211, 238, 0.4);
+      background: radial-gradient(circle at 30% 30%, #c0d2f1, #a6b0f7, #8caef7, #a3a5f6);
+      box-shadow: 0 0 25px rgba(163, 165, 246, 0.6), 0 0 25px rgba(192, 210, 241, 0.4);
       animation: pulse 3s ease-in-out infinite;
     }
+
 
     @keyframes pulse {
       0%,100% { transform: scale(1); opacity: 0.95; }
