@@ -6,6 +6,7 @@ from rich.console import Console
 from RestrictedPython import compile_restricted, safe_globals, limited_builtins, utility_builtins
 from RestrictedPython.PrintCollector import PrintCollector
 from agents import function_tool
+from statusTools import mark_executing_python, clear_tool_status
 
 console = Console()
 
@@ -65,6 +66,7 @@ def execute_python(code: str):
     Returns:
         str: The execution output, including stdout, stderr, and any results or errors.
     """
+    mark_executing_python()
     console.print(f"\nExecuting Python code:\n{code}", style="dim blue")
     
     if code.strip() == "debug_namespace":
@@ -128,3 +130,5 @@ def execute_python(code: str):
     except Exception as e:
         tb = traceback.format_exc()
         return f"Execution failed: {str(e)}\nTraceback:\n{tb}"
+    finally:
+        clear_tool_status()

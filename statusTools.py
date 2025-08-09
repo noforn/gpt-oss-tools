@@ -107,3 +107,6 @@ def mark_checking_status() -> None:
 
 def mark_visiting_website() -> None:
     _mark_status("Reading more...", "website")
+
+def mark_executing_python() -> None:
+    _mark_status("Executing python...", "executing")
