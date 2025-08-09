@@ -1,26 +1,26 @@
-# Chatty
+# Iris &mdash; Your day, made easy.
 
-Chatty is an intelligent agent that combines complex reasoning with several helpful utilities.  It uses the `agents` framework to run an interactive chat session and exposes tools for web search, URL browsing, weather lookups, and executing Python code in a sandboxed environment.
+Iris is your intelligent, always-ready assistant that combines advanced reasoning with powerful, practical tools. It runs entirely on a local model, keeping your data private while giving you the speed and reliability of offline operation. From keeping your calendar on track to finding information, checking the weather, browsing content, or crunching numbers for a project, Iris works seamlessly to keep your day organized and effortless.
 
-## Key Features
+## **Key Features**  
 
-- **Interactive agent chat** &ndash; Start a conversation with a local model and get markdown-formatted answers in the terminal.
-- **Web search and page browsing** &ndash; Query DuckDuckGo and summarize the contents of specific web pages for up-to-date information.
-- **Weather reports** &ndash; Automatically detect your location and fetch forecasts from weather.gov.
-- **Restricted Python execution** &ndash; Run code safely in a persistent sandbox for calculations or quick experiments.
-- **Google Calendar integration** &ndash; List, create, and delete events after authenticating with your Google account.
-- **Smart home automation** &ndash; Control Kasa smart lights by turning them on/off, adjusting brightness, or reading their current state.
-- **Web-based interface** &ndash; Launch a FastAPI-powered UI to chat with the assistant from your browser.
+- **Natural, interactive conversations** — Use Iris from the command-line or through a sleek web interface, powered by a fast, private local model that delivers clear, markdown-formatted answers.  
+- **Real-time web intelligence** — Search the web, open specific pages, and get concise, relevant summaries for up-to-date information.  
+- **Weather at a glance** — Automatically detect your location and pull accurate forecasts from weather.gov.  
+- **Safe, powerful code execution** — Run Python in a secure sandbox for quick calculations, data processing, or rapid prototyping.  
+- **Seamless calendar management** — View, create, and delete events from your Google Calendar after a one-time authentication.  
+- **Smart home control** — Manage Kasa smart lights, including power, brightness, and status checks, all from the same chat.  
+- **Web-based interface** — Switch to a sleek, browser-based UI for a more visual and interactive experience.  
 
-## Use Cases
+## **Use Cases**  
 
-- Research current events or gather information from the web.
-- Generate quick scripts or perform calculations without leaving the chat.
-- Check the weather for your current location or for specific coordinates.
-- Explore or prototype tool-augmented agent behaviours.
-- Manage smart home devices such as Kasa lights.
-- Review and manage events from your Google Calendar.
-- Use a browser-based interface for a more visual chat experience.
+- Stay informed with real-time updates on current events and topics you care about.  
+- Automate calculations or create quick scripts without opening another app.  
+- Check the weather instantly for your current location or any place you choose.  
+- Experiment with and extend Iris’s toolset to explore new agent behaviors.  
+- Control your smart home devices as naturally as sending a message.  
+- Review your schedule, add new appointments, or manage events effortlessly.  
+- Enjoy a streamlined, visual chat experience right from your browser.  
 
 ## Getting Started
 
@@ -35,7 +35,7 @@ Chatty is an intelligent agent that combines complex reasoning with several help
        rich termcolor RestrictedPython pylatexenc fastapi uvicorn \
        python-kasa python-dotenv
    ```
-3. Download the local model used by the assistant:
+3. Download a tool-capable model (default):
    ```bash
    ollama pull gpt-oss:20b
    ```
@@ -55,7 +55,8 @@ Chatty is an intelligent agent that combines complex reasoning with several help
      ```
 6. Type your questions or commands. In the CLI, enter `bye` to exit the session or /reset to clear context.
 
-## License
+## Note
 
-This project is licensed under the MIT License.  See the LICENSE file for details.
+This framework is currently under development. Stay tuned for improvements and new features!
+
 
