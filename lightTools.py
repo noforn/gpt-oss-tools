@@ -4,7 +4,7 @@ import asyncio
 from dotenv import load_dotenv
 import traceback
 from agents import function_tool
-from statusTools import mark_adjusting_lights, clear_tool_status
+from statusTools import mark_adjusting_lights, clear_tool_status, mark_checking_status
 
 
 FIRST_IP_ADDRESS = "192.168.1.165"
@@ -294,7 +294,7 @@ async def get_light_state() -> list[dict]:
     Gets the current state of the lights (on/off, HSV, brightness).
     Includes dev.update() to ensure properties are populated.
     """
-    mark_adjusting_lights()
+    mark_checking_status()
     try:
         ip_addresses_to_run_on = [FIRST_IP_ADDRESS, SECOND_IP_ADDRESS]
 
