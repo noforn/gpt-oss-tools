@@ -103,7 +103,7 @@ def mark_getting_weather() -> None:
     _mark_status("Getting weather…", "weather")
 
 def mark_checking_status() -> None:
-    _mark_status("Checking status…", "status")
+    _mark_status("Checking light status…", "status")
 
 def mark_visiting_website() -> None:
     _mark_status("Reading more...", "website")
