@@ -529,8 +529,10 @@ _INDEX_HTML = r"""
     
     button {
       height: 56px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;
-      color: #060910; font-weight: 600; letter-spacing: 0.3px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #ffffff; font-weight: 600; letter-spacing: 0.3px;
+      background: linear-gradient(300deg, #c0d2f1, #a6b0f7, #8caef7, #a3a5f6);
+      background-size: 120% 120%;
+      animation: gradient-animation 12s ease infinite;
       box-shadow: 0 10px 20px rgba(167, 139, 250, 0.25), 0 6px 16px rgba(34, 211, 238, 0.18);
       transition: transform 160ms ease, box-shadow 200ms ease, filter 200ms ease;
     }
