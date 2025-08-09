@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from typing import Optional
 from agents import function_tool
-
+from statusTools import mark_working_with_calendar, clear_tool_status
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = "<calendar_id>"
@@ -28,7 +28,7 @@ async def list_calendar_events() -> dict:
     message: str
     events: list[{"start": str, "summary": str, "event_id": str}]
     """
-
+    mark_working_with_calendar()
     print("\n[list_calendar_events] Initiating process to list calendar events...")
     creds = None
 
@@ -148,6 +148,8 @@ async def list_calendar_events() -> dict:
             "message": f"An unexpected error of type {type(e).__name__} occurred: {str(e)}",
             "events": []
         }
+    finally:
+        clear_tool_status()
 
 @function_tool
 async def create_calendar_event(
@@ -181,6 +183,7 @@ async def create_calendar_event(
     status: "error"
     message: str
     """
+    mark_working_with_calendar()
     print(f"\n[create_calendar_event] Attempting to create event: '{summary}'")
     creds = None
 
@@ -257,7 +260,9 @@ async def create_calendar_event(
             "status": "error",
             "message": f"An unexpected error ({type(e).__name__}) occurred: {str(e)}"
         }
-    
+    finally:
+        clear_tool_status()
+
 @function_tool
 async def delete_calendar_event(event_id: str) -> dict:
     """
@@ -268,6 +273,7 @@ async def delete_calendar_event(event_id: str) -> dict:
     Returns:
         dict: A dictionary containing the status and message.
     """
+    mark_working_with_calendar()
     print(f"\n[delete_calendar_event] Attempting to delete event with ID: '{event_id}'")
     creds = None
 
@@ -323,4 +329,5 @@ async def delete_calendar_event(event_id: str) -> dict:
             "status": "error",
             "message": f"An unexpected error ({type(e).__name__}) occurred while deleting event ID '{event_id}': {str(e)}"
         }
-    
+    finally:
+        clear_tool_status()

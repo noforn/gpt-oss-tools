@@ -1,6 +1,7 @@
 import requests
 from agents import function_tool
 from rich.console import Console
+from statusTools import mark_checking_location, mark_getting_weather, clear_tool_status
 
 console = Console()
 
@@ -12,6 +13,7 @@ def get_location():
         str: The user's location information or error message.
     """
     console.print("\nChecking location...", style="dim blue")
+    mark_checking_location()
     url = "http://ip-api.com/json"
     try:
         response = requests.get(url, timeout=8)
@@ -23,6 +25,8 @@ def get_location():
             return "Unknown location"
     except Exception as e:
         return f"Error fetching location: {str(e)}"
+    finally:
+        clear_tool_status()
 
 @function_tool
 def get_weather(latitude: float, longitude: float):
@@ -35,6 +39,7 @@ def get_weather(latitude: float, longitude: float):
     Returns:
         str: The weather forecast details.
     """
+    mark_getting_weather()
     console.print(f"\nGetting weather for latitude {latitude}, longitude {longitude}", style="dim blue")
     headers = {'User-Agent': '(gpt-oss-tools, openai)'}
     points_url = f"https://api.weather.gov/points/{latitude},{longitude}"
@@ -51,3 +56,5 @@ def get_weather(latitude: float, longitude: float):
         return f"Weather forecast:\n{forecast_summary}"
     except Exception as e:
         return f"Error fetching weather: {str(e)}"
+    finally:
+        clear_tool_status()

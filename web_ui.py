@@ -6,11 +6,11 @@ from typing import Dict, Any
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import uvicorn
-
 from agents import Agent, Runner
 from agents.extensions.models.litellm_model import LitellmModel
 
-from searchTools import web_search, browse_url, set_current_session_id, get_tool_status, set_fallback_session_id
+from searchTools import web_search, browse_url
+from statusTools import get_tool_status, set_current_session_id, set_fallback_session_id
 from weatherTools import get_location, get_weather
 from pythonTools import execute_python
 from lightTools import *
@@ -141,7 +141,8 @@ def create_app() -> FastAPI:
     @app.get("/api/status")
     async def status_endpoint(session_id: str = ""):
         if not session_id:
-            return {"searching": False}
+            # Provide default shape including new fields for UI
+            return {"active": False, "label": "", "searching": False}
         return get_tool_status(session_id)
 
     @app.get("/", response_class=HTMLResponse)
@@ -793,16 +794,18 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
       return wrap;
     }
 
-    // Status polling to show "Searching…" shimmer when tools are active
+    // Status polling to show activity shimmer (e.g., "Searching…", "Adjusting lights…") when tools are active
     let _statusTimer = null;
     let _statusTarget = null; // the current typing bubble being updated
-    function _setTypingSearching(el, searching) {
+    function _setTypingStatus(el, statusData) {
       // Guard against stale or finalized bubbles
       if (!el || el !== _statusTarget || !el.classList.contains('typing')) return;
       const content = el.querySelector('.content');
       if (!content) return;
-      if (searching) {
-        content.innerHTML = `<span class="status-shimmer">Searching…</span>`;
+      const isActive = !!(statusData && (statusData.active || statusData.searching));
+      if (isActive) {
+        const label = (statusData && statusData.label) || (statusData && statusData.searching ? 'Searching…' : 'Working…');
+        content.innerHTML = `<span class="status-shimmer">${escapeHtml(label)}</span>`;
       } else {
         // Only reset to dots if we are still in typing state; if response already rendered, skip
         if (el.classList.contains('typing')) {
@@ -818,7 +821,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
         try {
           const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
           const data = await res.json();
-          _setTypingSearching(typingEl, !!data.searching);
+          _setTypingStatus(typingEl, data);
         } catch (e) {}
       })();
       // Then continue polling
@@ -826,7 +829,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
         try {
           const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
           const data = await res.json();
-          _setTypingSearching(typingEl, !!data.searching);
+          _setTypingStatus(typingEl, data);
         } catch (e) {
           // ignore errors; keep default typing UI
         }
