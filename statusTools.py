@@ -79,7 +79,7 @@ def get_tool_status(session_id: str) -> Dict[str, Any]:
 
 
 def mark_searching() -> None:
-    _mark_status("Searching…", "search")
+    _mark_status("Searching the web…", "search")
 
 
 def mark_adjusting_lights() -> None:
@@ -87,8 +87,14 @@ def mark_adjusting_lights() -> None:
     _mark_status("Adjusting lights…", "lights")
 
 
-def mark_working_with_calendar() -> None:
-    _mark_status("Working with Calendar…", "calendar")
+def mark_checking_calendar() -> None:
+    _mark_status("Checking your Calendar…", "calendar")
+
+def mark_creating_event() -> None:
+    _mark_status("Creating event…", "event")
+
+def mark_deleting_event() -> None:
+    _mark_status("Deleting event…", "event")
 
 def mark_checking_location() -> None:
     _mark_status("Checking location…", "location")
@@ -98,3 +104,6 @@ def mark_getting_weather() -> None:
 
 def mark_checking_status() -> None:
     _mark_status("Checking status…", "status")
+
+def mark_visiting_website() -> None:
+    _mark_status("Reading more...", "website")

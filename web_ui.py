@@ -444,7 +444,7 @@ _INDEX_HTML = r"""
       background: linear-gradient(180deg, rgba(31, 41, 55, 0.9), rgba(31, 41, 55, 0.75));
     }
 
-    .role { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .role { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: none; letter-spacing: 0.06em; }
 
     .content { color: var(--text); white-space: pre-wrap; line-height: 1.55; overflow-wrap: anywhere; word-break: break-word; }
     .content code { background: rgba(148,163,184,0.15); padding: 0 6px; border-radius: 6px; }
@@ -523,7 +523,7 @@ _INDEX_HTML = r"""
       background-size: 200% 100%;
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: shimmer 2000ms linear infinite;
+      animation: shimmer 6000ms linear infinite;
     }
 
     @keyframes shimmer {
@@ -806,13 +806,35 @@ body.gradient-background::after {
     inputEl.addEventListener('blur', () => { if (_isTouch) inputEl.style.caretColor = ''; });
 
 
-      // Keep default paddings/line-height so the fixed-height textarea scrolls naturally
+      // Vertically center the caret with the placeholder on desktop when single-line
       function alignCaretToCenter() {
         if (!inputEl) return;
         try {
+          // Always start from natural metrics
           inputEl.style.lineHeight = '';
           inputEl.style.paddingTop = '';
           inputEl.style.paddingBottom = '';
+
+          // Only apply centering on desktop and when content is a single visual line
+          if (!_isDesktop) return;
+
+          const hasNewline = /\n/.test(inputEl.value || '');
+          const height = inputEl.clientHeight || 0; // includes padding
+          const cs = window.getComputedStyle(inputEl);
+          const lineHeightPx = parseFloat(cs.lineHeight);
+
+          if (!height || !isFinite(lineHeightPx) || lineHeightPx <= 0) return;
+
+          // If content would wrap/scroll or contains explicit newline, keep natural layout
+          const contentTall = (inputEl.scrollHeight > height + 1) || hasNewline;
+          if (contentTall) return;
+
+          // Center single-line vertically by balancing top/bottom padding
+          const targetPad = Math.max(0, (height - lineHeightPx) / 2);
+          inputEl.style.paddingTop = `${targetPad}px`;
+          inputEl.style.paddingBottom = `${targetPad}px`;
+          // Lock the computed line-height so centering remains stable
+          inputEl.style.lineHeight = `${lineHeightPx}px`;
         } catch (_) {
           // best-effort; ignore failures
         }
@@ -865,7 +887,7 @@ body.gradient-background::after {
       if (isTyping) { wrap.classList.add('typing'); }
       wrap.innerHTML = `
         <div class="bubble">
-          <div class="role">${role === 'user' ? 'You' : 'Assistant'}</div>
+          <div class="role">${role === 'user' ? 'You' : 'Iris'}</div>
           <div class="content">${isTyping ? `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>` : htmlContent}</div>
         </div>
       `;
