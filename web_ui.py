@@ -1,10 +1,12 @@
 import uuid
 import re
+import os
 from datetime import datetime
 from typing import Dict, Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from agents import Agent, Runner
 from agents.extensions.models.litellm_model import LitellmModel
@@ -134,6 +136,14 @@ SERVER_API_KEY = ""
 def create_app() -> FastAPI:
     app = FastAPI(title="Iris", version="1.0.0")
 
+    # Serve static assets (favicons, touch icons, manifest)
+    try:
+        assets_dir = os.path.join(os.path.dirname(__file__), "assets")
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    except Exception:
+        # Non-fatal if assets directory is missing in some environments
+        pass
+
     @app.get("/_health")
     async def health():
         return {"ok": True}
@@ -244,6 +254,14 @@ _INDEX_HTML = r"""
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Iris" />
   <meta name="color-scheme" content="dark" />
+  <!-- Favicons & PWA -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png" />
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="manifest" href="/assets/images/site.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/android-chrome-512x512.png" />
   <title>Iris</title>
   <style>
     :root {
