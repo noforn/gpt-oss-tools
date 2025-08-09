@@ -35,6 +35,8 @@ latex_converter = LatexNodes2Text()
 
 current_date = datetime.now().strftime("%A, %Y-%m-%d")
 current_time = datetime.now().strftime("%I:%M %p")
+weekday = datetime.now().strftime("%A")
+date_month= datetime.now().strftime("%B %-d, %Y")
 
 
 def _is_ollama_tool_template_error(exc: Exception) -> bool:
@@ -95,11 +97,14 @@ async def main(model: str, api_key: str):
         If the user asks about upcoming events, meetings, or schedules, use list_calendar_events.
         If the user asks you to add or schedule a new event, use create_calendar_event.
         If the user asks to remove or cancel an event, use delete_calendar_event.
-        When creating an event, always confirm the details with the user before finalizing (title, date, time, duration, and location if applicable).
+        When creating an event, only confirm the details with the user before finalizing if they are not given. If you have what you need, create the event without asking for confirmation. Always use EST for time zone.
         When listing events, default to showing the next 5 upcoming events unless the user specifies otherwise.
         If the user does not provide a date/time for listing or creating events, ask them for it.
         Use natural, concise language to summarize events rather than tables, unless the user explicitly requests a table format.
         If a query is ambiguous (e.g., "Book lunch with Sarah"), clarify details before creating the event.
+        Always respond in 12hr time format.
+        # IMPORTANT:
+        In your response, always make sure days of the week are accurate, today is {weekday}, and the date is {date_month}.
 
 
         # Light-Specific Instructions:
@@ -110,7 +115,7 @@ async def main(model: str, api_key: str):
         If the user asks you to set the color of the lights, use the set_light_hsv tool. Use get_light_state to check the current brightness and keep it the same when setting the color.
         If the user asks you to get the state of the lights, use the get_light_state tool.
         If it would be useful to check the state of the lights before using any of the other light tools, use the get_light_state tool.
-        Avoid using tables when describing the state of the lights, use natural language instead.
+        Avoid using tables or bullets when describing the state of the lights, use natural language instead.
 
         # Weather-Specific Instructions:
 
