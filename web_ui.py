@@ -86,6 +86,7 @@ def build_instructions() -> str:
         If the user does not provide a date/time for listing or creating events, ask them for it.
         Use natural, concise language to summarize events rather than tables, unless the user explicitly requests a table format.
         If a query is ambiguous (e.g., "Book lunch with Sarah"), clarify details before creating the event.
+        Always respond in 12hr time format.
 
 
         # Light-Specific Instructions:
@@ -794,21 +795,24 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
 
     // Status polling to show "Searching…" shimmer when tools are active
     let _statusTimer = null;
+    let _statusTarget = null; // the current typing bubble being updated
     function _setTypingSearching(el, searching) {
-      const content = el && el.querySelector('.content');
+      // Guard against stale or finalized bubbles
+      if (!el || el !== _statusTarget || !el.classList.contains('typing')) return;
+      const content = el.querySelector('.content');
       if (!content) return;
       if (searching) {
         content.innerHTML = `<span class="status-shimmer">Searching…</span>`;
       } else {
         // Only reset to dots if we are still in typing state; if response already rendered, skip
-        const parent = el.closest('.message');
-        if (parent && parent.classList.contains('typing')) {
+        if (el.classList.contains('typing')) {
           content.innerHTML = `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
         }
       }
     }
     function startStatusPolling(typingEl) {
       stopStatusPolling();
+      _statusTarget = typingEl;
       // Immediate check so UI flips to Searching… without delay
       (async () => {
         try {
@@ -833,6 +837,7 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
         clearInterval(_statusTimer);
         _statusTimer = null;
       }
+      _statusTarget = null;
     }
 
     function scrollToBottom() {
@@ -867,13 +872,17 @@ body::after  { animation: bgCrossfadeB 80s ease-in-out infinite; }
         }
         let reply = data.reply || data.error || 'No response.';
         reply = typeof reply === 'string' ? reply.replace(/\s+$/,'') : reply;
+        // Finalize typing bubble before rendering to avoid race with status polling
+        stopStatusPolling();
+        typingEl.classList.remove('typing');
         typingEl.querySelector('.content').innerHTML = renderMarkdown(reply);
         scrollToBottom();
       } catch (err) {
+        stopStatusPolling();
+        typingEl.classList.remove('typing');
         typingEl.querySelector('.content').innerHTML = renderMarkdown('Error: ' + (err?.message || err));
         scrollToBottom();
       } finally {
-        stopStatusPolling();
         sendEl.disabled = false;
       }
     }
