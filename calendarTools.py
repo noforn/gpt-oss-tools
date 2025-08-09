@@ -7,10 +7,10 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from typing import Optional
 from agents import function_tool
-from statusTools import mark_working_with_calendar, clear_tool_status
+from statusTools import mark_checking_calendar, clear_tool_status, mark_creating_event, mark_deleting_event
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
-CALENDAR_ID = "<calendar_id>"
+CALENDAR_ID = "c148b131e451b4c5175ad67dc71dd7d01d993661c25b2172a3463a6a99bf2667@group.calendar.google.com"
 TOKEN_FILE = "token.json"
 CREDENTIALS_FILE = "credentials.json"
 
@@ -28,7 +28,7 @@ async def list_calendar_events() -> dict:
     message: str
     events: list[{"start": str, "summary": str, "event_id": str}]
     """
-    mark_working_with_calendar()
+    mark_checking_calendar()
     print("\n[list_calendar_events] Initiating process to list calendar events...")
     creds = None
 
@@ -183,7 +183,7 @@ async def create_calendar_event(
     status: "error"
     message: str
     """
-    mark_working_with_calendar()
+    mark_creating_event()
     print(f"\n[create_calendar_event] Attempting to create event: '{summary}'")
     creds = None
 
@@ -273,7 +273,7 @@ async def delete_calendar_event(event_id: str) -> dict:
     Returns:
         dict: A dictionary containing the status and message.
     """
-    mark_working_with_calendar()
+    mark_deleting_event()
     print(f"\n[delete_calendar_event] Attempting to delete event with ID: '{event_id}'")
     creds = None
 

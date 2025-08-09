@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from agents import function_tool
 from rich.console import Console
-from statusTools import mark_searching, clear_tool_status
+from statusTools import mark_searching, clear_tool_status, mark_visiting_website
  
 
 console = Console()
@@ -60,7 +60,7 @@ def browse_url(url: str):
         text = text.strip()
         return (text[:2000] + '...') if len(text) > 2000 else text
 
-    mark_searching()
+    mark_visiting_website()
     last_err = None
     try:
         for attempt in range(1, max(1, retries) + 1):
