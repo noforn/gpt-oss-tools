@@ -25,6 +25,8 @@ from tableTools import (
 from typing import List, Tuple, Dict
 from lightTools import *
 from calendarTools import list_calendar_events, create_calendar_event, delete_calendar_event
+from taskTools import schedule_task, check_tasks, delete_task
+from taskScheduler import TaskScheduler
 
 warnings.filterwarnings("ignore")
 
@@ -84,6 +86,9 @@ async def main(model: str, api_key: str):
         list_calendar_events: Lists all calendar events.
         create_calendar_event: Creates a new calendar event.
         delete_calendar_event: Deletes a calendar event.
+        schedule_task: Schedule a future or recurring task (store session_id, task_id, prompt, and VEVENT).
+        check_tasks: List scheduled tasks and their status (upcoming/completed).
+        delete_task: Delete a scheduled task by task id.
 
         # General Tool Usage Guidelines
 
@@ -131,11 +136,36 @@ async def main(model: str, api_key: str):
         model=LitellmModel(model=model, api_key=api_key),
         tools=[get_weather, get_location, web_search, browse_url, execute_python, 
         turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state, 
-        list_calendar_events, create_calendar_event, delete_calendar_event],
+        list_calendar_events, create_calendar_event, delete_calendar_event,
+        schedule_task, check_tasks, delete_task],
     )
 
     history = []
     print(colored("Chat started\ntype 'bye' to quit", "dark_grey"))
+
+    # Start a background scheduler in CLI mode that injects into this same session/history
+    scheduler = TaskScheduler()
+
+    async def _inject_cli_message(session_id: str, message: str):
+        nonlocal history
+        full_prompt = "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + message if history else message
+        result = await Runner.run(agent, full_prompt, max_turns=20)
+        response = result.final_output
+
+        processed_response = latex_converter.latex_to_text(response)
+        processed_response = fix_markdown_tables(processed_response)
+        processed_response = linkify_bare_urls(processed_response)
+        text_without_tables, parsed_tables = extract_markdown_tables(processed_response)
+        rich_tables = build_rich_tables(parsed_tables) if parsed_tables else []
+        renderable = Group(Markdown(text_without_tables), *rich_tables) if rich_tables else Markdown(text_without_tables)
+
+        print()
+        console.print(Panel(renderable, title="Agent (scheduled task)", border_style="magenta", style="bold magenta"))
+
+        history.append(f"User: {message}")
+        history.append(f"Assistant: {response}")
+
+    await scheduler.start(_inject_cli_message)
 
     while True:
         prompt = input(colored("\nYou: ", "blue"))
