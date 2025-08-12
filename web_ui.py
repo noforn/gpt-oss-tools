@@ -1,9 +1,9 @@
 import uuid
 import re
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
-
+import pytz
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -17,17 +17,30 @@ from weatherTools import get_location, get_weather
 from pythonTools import execute_python
 from lightTools import *
 from calendarTools import list_calendar_events, create_calendar_event, delete_calendar_event
+from taskTools import schedule_task, check_tasks, delete_task
+from taskScheduler import TaskScheduler
 from pylatexenc.latex2text import LatexNodes2Text
 from tableTools import fix_markdown_tables, linkify_bare_urls
 
 
-# ------------------------------
-# Agent/session plumbing
-# ------------------------------
 latex_converter = LatexNodes2Text()
 
-# In-memory sessions: session_id -> { agent, history }
 session_store: Dict[str, Dict[str, Any]] = {}
+# Helper: attach current time to the message passed into the agent,
+# without changing what the UI displays.
+def _attach_current_time(message: str) -> str:
+    try:
+        eastern = pytz.timezone('America/New_York')
+        now_et = datetime.now(eastern).strftime('%Y-%m-%d %I:%M:%S %p %Z')
+    except Exception:
+        now_et = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
+    try:
+        now_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+    except Exception:
+        now_utc = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+    prefix = f"Current time: {now_utc} | {now_et}\n\n"
+    return prefix + (message or '')
+
 
 
 def _is_ollama_tool_template_error(exc: Exception) -> bool:
@@ -43,6 +56,9 @@ def build_instructions() -> str:
     current_time = datetime.now().strftime("%I:%M %p")
     weekday = datetime.now().strftime("%A")
     date_month= datetime.now().strftime("%B %-d, %Y")
+    eastern = pytz.timezone('America/New_York')
+    now_et = datetime.now(eastern)
+    formatted_time = now_et.strftime('%Y%m%dT%H%M%S')
     return f"""
 
         # Identity
@@ -72,6 +88,9 @@ def build_instructions() -> str:
         list_calendar_events: Lists all calendar events.
         create_calendar_event: Creates a new calendar event.
         delete_calendar_event: Deletes a calendar event.
+        schedule_task: Schedule a future or recurring task (store session_id, task_id, prompt, and VEVENT).
+        check_tasks: List scheduled tasks and their status (upcoming/completed).
+        delete_task: Delete a scheduled task by task id.
 
         # General Tool Usage Guidelines
 
@@ -111,6 +130,20 @@ def build_instructions() -> str:
         In your response, include only the most relevant weather details based on the user's question—do not provide all available information unless requested.
         Do not use web_search or browse_url for weather-related queries; handle them exclusively with get_location and get_weather as needed.
         When returning weather information, be sure it is aligned with the current date and day of the week.
+
+        # Task-Specific Instructions:
+
+        The current time is {formatted_time}.
+
+        Use schedule_task to schedule future or recurring actions for yourself. Provide a clear VEVENT with a DTSTART (and optional RRULE). Example VEVENT:
+        BEGIN:VEVENT
+        DTSTART;TZID=America/New_York:20250101T090000
+        RRULE:FREQ=DAILY;INTERVAL=1
+        END:VEVENT
+
+        Use check_tasks to review your upcoming or completed tasks. Use delete_task to remove tasks by their id.
+        # IMPORTANT:
+        Always verify the DTSTART is relative to the current time.
         """
 
 
@@ -121,7 +154,8 @@ def create_agent(model: str, api_key: str) -> Agent:
         model=LitellmModel(model=model, api_key=api_key),
         tools=[get_weather, get_location, web_search, browse_url, execute_python, 
         turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state, 
-        list_calendar_events, create_calendar_event, delete_calendar_event],
+        list_calendar_events, create_calendar_event, delete_calendar_event,
+        schedule_task, check_tasks, delete_task],
     )
 
 
@@ -132,36 +166,86 @@ def process_response_text(response: str) -> str:
     return processed_response
 
 
-# Populated by run_web_ui()
 SERVER_MODEL = ""
 SERVER_API_KEY = ""
+
+# Inject a message into a given session (used by the background scheduler)
+async def _inject_message(session_id: str, user_message: str) -> str:
+    if not session_id:
+        return "No session id"
+    if session_id not in session_store:
+        session_store[session_id] = {
+            "agent": create_agent(SERVER_MODEL, SERVER_API_KEY),
+            "history": [],
+            "rev": 0,
+        }
+    session = session_store[session_id]
+    history = session["history"]
+    agent: Agent = session["agent"]
+
+    try:
+        set_current_session_id(session_id)
+        set_fallback_session_id(session_id)
+    except Exception:
+        pass
+
+    augmented = _attach_current_time(user_message)
+    full_prompt = (
+        "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + augmented
+        if history
+        else augmented
+    )
+    result = await Runner.run(agent, full_prompt, max_turns=20)
+    response_text = result.final_output
+    processed = process_response_text(response_text)
+
+    # Do not show the injected prompt in the UI chat; store as a scheduled user entry
+    history.append(f"User (scheduled): {user_message}")
+    history.append(f"Iris: {processed}")
+    session["rev"] = session.get("rev", 0) + 2
+    return response_text
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Iris", version="1.0.0")
 
-    # Serve static assets (favicons, touch icons, manifest)
     try:
         assets_dir = os.path.join(os.path.dirname(__file__), "assets")
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
     except Exception:
-        # Non-fatal if assets directory is missing in some environments
         pass
 
     @app.get("/_health")
     async def health():
         return {"ok": True}
 
+    @app.on_event("startup")
+    async def _start_scheduler():
+        # Start background scheduler to check and run due tasks
+        app.state.scheduler = TaskScheduler()
+        await app.state.scheduler.start(_inject_message)
+
     @app.get("/api/status")
     async def status_endpoint(session_id: str = ""):
         if not session_id:
-            # Provide default shape including new fields for UI
-            return {"active": False, "label": "", "searching": False}
-        return get_tool_status(session_id)
+            return {"active": False, "label": "", "searching": False, "rev": 0}
+        base = get_tool_status(session_id)
+        sess = session_store.get(session_id) or {}
+        base["rev"] = int(sess.get("rev", 0))
+        return base
+
+    @app.get("/api/history")
+    async def history_endpoint(session_id: str = ""):
+        if not session_id:
+            return JSONResponse({"history": [], "rev": 0})
+        sess = session_store.get(session_id) or {}
+        return JSONResponse({
+            "history": sess.get("history", []),
+            "rev": int(sess.get("rev", 0)),
+        })
 
     @app.get("/", response_class=HTMLResponse)
     async def index(_: Request):
-        # Single-file app: dark theme, subtle animations, textures
         return HTMLResponse(content=_INDEX_HTML, status_code=200)
 
     @app.post("/api/chat")
@@ -171,29 +255,29 @@ def create_app() -> FastAPI:
         if not user_message:
             return JSONResponse({"error": "Empty message"}, status_code=400)
 
-        # Ensure session (respect client-provided id so the UI can poll status)
         if not session_id:
             session_id = str(uuid.uuid4())
         if session_id not in session_store:
             session_store[session_id] = {
                 "agent": create_agent(SERVER_MODEL, SERVER_API_KEY),
                 "history": [],
+                "rev": 0,
             }
         session = session_store[session_id]
         history = session["history"]
         agent: Agent = session["agent"]
 
-        # Bind session id into tool context so tools can expose status to the UI
         try:
             set_current_session_id(session_id)
             set_fallback_session_id(session_id)
         except Exception:
             pass
 
+        augmented = _attach_current_time(user_message)
         full_prompt = (
-            "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + user_message
+            "Previous conversation:\n" + "\n".join(history) + "\n\nCurrent user message: " + augmented
             if history
-            else user_message
+            else augmented
         )
 
         try:
@@ -214,20 +298,20 @@ def create_app() -> FastAPI:
         processed = process_response_text(response_text)
 
         history.append(f"User: {user_message}")
-        history.append(f"Iris: {response_text}")
+        history.append(f"Iris: {processed}")
+        session["rev"] = session.get("rev", 0) + 2
 
-        return JSONResponse({"reply": processed, "session_id": session_id})
+        return JSONResponse({"reply": processed, "session_id": session_id, "rev": session["rev"]})
 
     @app.post("/api/reset")
     async def reset(payload: Dict[str, Any]):
         existing_id = payload.get("session_id")
-        # Create a fresh session id to guarantee a clean slate
         new_id = str(uuid.uuid4())
         session_store[new_id] = {
             "agent": create_agent(SERVER_MODEL, SERVER_API_KEY),
             "history": [],
+            "rev": 0,
         }
-        # Optionally drop the old session (best-effort)
         if existing_id and existing_id in session_store:
             try:
                 del session_store[existing_id]
@@ -654,7 +738,6 @@ textarea#input { width: 100%; box-sizing: border-box; }
   .content p { margin-bottom: 5px; }
 }
 
-
 /* --- Gentle color-shifted background using existing palette --- */
 body { animation: none !important; } /* cancel any previous body bg animations */
 
@@ -900,6 +983,77 @@ body.gradient-background::after {
       return wrap;
     }
 
+    // Track server-side session revision to render scheduled messages
+    let lastRev = 0;
+    // Background status handling when there is no active typing bubble
+    let _bgStatusTimer = null;
+    let _bgTypingEl = null;
+
+    function _ensureBgTypingEl() {
+      if (_bgTypingEl && document.body.contains(_bgTypingEl)) return _bgTypingEl;
+      _bgTypingEl = addMessage('assistant', '', true);
+      return _bgTypingEl;
+    }
+
+    function _removeBgTypingEl() {
+      if (_bgTypingEl && _bgTypingEl.parentNode) {
+        _bgTypingEl.parentNode.removeChild(_bgTypingEl);
+      }
+      _bgTypingEl = null;
+    }
+
+    function updateBackgroundStatusFromData(statusData) {
+      try {
+        const active = !!(statusData && (statusData.active || statusData.searching));
+        // If a foreground typing bubble exists, prefer it for status, so remove background bubble if any
+        if (_statusTarget && _statusTarget.classList && _statusTarget.classList.contains('typing')) {
+          _removeBgTypingEl();
+          return;
+        }
+        if (active) {
+          const label = (statusData && statusData.label) || (statusData && statusData.searching ? 'Searching…' : 'Working…');
+          const el = _ensureBgTypingEl();
+          const content = el.querySelector('.content');
+          if (content) content.innerHTML = `<span class="status-shimmer">${escapeHtml(label)}</span>`;
+        } else {
+          _removeBgTypingEl();
+        }
+      } catch (_) {}
+    }
+    let _historyTimer = null;
+    async function fetchAndRenderHistoryIfChanged() {
+      try {
+        const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
+        const data = await res.json();
+        const serverRev = parseInt(data && data.rev || 0, 10) || 0;
+        if (serverRev > lastRev) {
+          const hres = await fetch(`/api/history?session_id=${encodeURIComponent(sessionId)}`);
+          const hdata = await hres.json();
+          const history = Array.isArray(hdata.history) ? hdata.history : [];
+          // Clear and re-render entire history for simplicity and consistency
+          messagesEl.innerHTML = '';
+          for (const line of history) {
+            if (typeof line !== 'string') continue;
+            const isUser = line.startsWith('User: ');
+            const isScheduled = line.startsWith('User (scheduled): ');
+            const isAssistant = line.startsWith('Iris: ');
+            if (!isUser && !isAssistant && !isScheduled) continue;
+            if (isScheduled) {
+              // Hide the injected scheduled prompt; skip rendering this line
+              continue;
+            }
+            const text = line.replace(/^User:\s*/, '').replace(/^Iris:\s*/, '');
+            addMessage(isUser ? 'user' : 'assistant', renderMarkdown(text));
+          }
+          lastRev = serverRev;
+        }
+        // Always update background status bubble based on latest status
+        updateBackgroundStatusFromData(data);
+      } catch (e) {
+        // ignore fetch errors
+      }
+    }
+
     // Status polling to show activity shimmer (e.g., "Searching…", "Adjusting lights…") when tools are active
     let _statusTimer = null;
     let _statusTarget = null; // the current typing bubble being updated
@@ -928,6 +1082,10 @@ body.gradient-background::after {
           const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
           const data = await res.json();
           _setTypingStatus(typingEl, data);
+          // Pick up any newly injected messages
+          fetchAndRenderHistoryIfChanged();
+          // And reflect background status if applicable (though we have a foreground bubble now)
+          updateBackgroundStatusFromData(data);
         } catch (e) {}
       })();
       // Then continue polling
@@ -936,6 +1094,8 @@ body.gradient-background::after {
           const res = await fetch(`/api/status?session_id=${encodeURIComponent(sessionId)}`);
           const data = await res.json();
           _setTypingStatus(typingEl, data);
+          fetchAndRenderHistoryIfChanged();
+          updateBackgroundStatusFromData(data);
         } catch (e) {
           // ignore errors; keep default typing UI
         }
@@ -975,10 +1135,11 @@ body.gradient-background::after {
           body: JSON.stringify({ message: text, session_id: sessionId })
         });
         const data = await res.json();
-        if (data.session_id && !sessionId) {
+      if (data.session_id && !sessionId) {
           sessionId = data.session_id;
           localStorage.setItem('gpt_oss_session', sessionId);
         }
+      if (typeof data.rev === 'number') lastRev = data.rev;
         let reply = data.reply || data.error || 'No response.';
         reply = typeof reply === 'string' ? reply.replace(/\s+$/,'') : reply;
         // Finalize typing bubble before rendering to avoid race with status polling
@@ -1037,6 +1198,9 @@ body.gradient-background::after {
       // Show placeholder again after reset
       fakePH.style.display = inputEl.value ? 'none' : '';
       _updateCaret();
+      lastRev = 0;
+      // Fetch and render (likely empty) new session history
+      fetchAndRenderHistoryIfChanged();
     }
 
     resetEl.addEventListener('click', resetConversation);
@@ -1052,6 +1216,12 @@ body.gradient-background::after {
       if (_isDesktop) {
         // capture baseline after initial layout
         setTimeout(() => { _desktopBaseHeight = inputEl.clientHeight || _desktopBaseHeight || 48; }, 0);
+      }
+      // Attempt to render any history for existing session
+      fetchAndRenderHistoryIfChanged();
+      // Also poll periodically so background-scheduled messages appear even when idle
+      if (!_historyTimer) {
+        _historyTimer = setInterval(fetchAndRenderHistoryIfChanged, 1500);
       }
     });
     if (window.visualViewport) {

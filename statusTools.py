@@ -110,3 +110,25 @@ def mark_visiting_website() -> None:
 
 def mark_executing_python() -> None:
     _mark_status("Executing python...", "executing")
+
+
+# New helpers for tasks
+def get_effective_session_id() -> Optional[str]:
+    """Expose the effective session id for tools or background tasks."""
+    return _get_effective_session_id()
+
+
+def mark_scheduling_task() -> None:
+    _mark_status("Scheduling task…", "task")
+
+
+def mark_checking_tasks() -> None:
+    _mark_status("Checking scheduled tasks…", "task")
+
+
+def mark_deleting_task() -> None:
+    _mark_status("Deleting scheduled task…", "task")
+
+
+def mark_running_scheduled_task() -> None:
+    _mark_status("Running scheduled task…", "task")
