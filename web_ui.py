@@ -142,6 +142,7 @@ def build_instructions() -> str:
         END:VEVENT
 
         Use check_tasks to review your upcoming or completed tasks. Use delete_task to remove tasks by their id.
+        You don't need to tell the user what the task ID is. Don't use emojis.
         # IMPORTANT:
         Always verify the DTSTART is relative to the current time.
         """
