@@ -33,9 +33,7 @@ Iris is your intelligent, always-ready assistant that combines advanced reasonin
    ```
 2. Install the required packages using uv's pip:
    ```bash
-   uv pip install "openai-agents[litellm]" ddgs requests beautifulsoup4 \
-       rich termcolor RestrictedPython pylatexenc fastapi uvicorn \
-       python-kasa python-dotenv
+   uv pip install -r requirements.txt
    ```
 3. Download a tool-capable model (default):
    ```bash
