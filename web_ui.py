@@ -1221,7 +1221,7 @@ body.gradient-background::after {
       fetchAndRenderHistoryIfChanged();
       // Also poll periodically so background-scheduled messages appear even when idle
       if (!_historyTimer) {
-        _historyTimer = setInterval(fetchAndRenderHistoryIfChanged, 1500);
+        _historyTimer = setInterval(fetchAndRenderHistoryIfChanged, 600);
       }
     });
     if (window.visualViewport) {
