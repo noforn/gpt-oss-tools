@@ -1,11 +1,10 @@
-agents
+openai-agents[litellm]
 beautifulsoup4
 duckduckgo-search
 fastapi
 google-api-python-client
 google-auth
 google-auth-oauthlib
-litellm
 playwright
 pylatexenc
 python-dotenv
