@@ -1,6 +1,6 @@
 # Iris &mdash; Your day, made easy.
 
-Iris is your intelligent, always-ready assistant that combines advanced reasoning with powerful, practical tools. It runs entirely on a local model, keeping your data private while giving you the speed and reliability of offline operation. From keeping your calendar on track to finding information, checking the weather, browsing content, or crunching numbers for a project, Iris works seamlessly to keep your day organized and effortless.
+Iris is your intelligent, always-ready assistant that combines advanced reasoning with powerful, practical tools. It runs entirely on a local model, keeping your data private while giving you the speed and reliability of offline inference. From keeping your calendar on track to finding information, checking the weather, browsing content, or crunching numbers for a project, Iris works seamlessly to keep your day organized and effortless.
 
 ## **Key Features**  
 
