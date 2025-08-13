@@ -27,6 +27,7 @@ from lightTools import *
 from calendarTools import list_calendar_events, create_calendar_event, delete_calendar_event
 from taskTools import schedule_task, check_tasks, delete_task
 from taskScheduler import TaskScheduler
+from stockTools import get_stock_price
 
 warnings.filterwarnings("ignore")
 
@@ -89,6 +90,7 @@ async def main(model: str, api_key: str):
         schedule_task: Schedule a future or recurring task (store session_id, task_id, prompt, and VEVENT).
         check_tasks: List scheduled tasks and their status (upcoming/completed).
         delete_task: Delete a scheduled task by task id.
+        get_stock_price: Get the latest stock price for the given ticker symbol.
 
         # General Tool Usage Guidelines
 
@@ -128,6 +130,24 @@ async def main(model: str, api_key: str):
         In your response, include only the most relevant weather details based on the user's question—do not provide all available information unless requested.
         Do not use web_search or browse_url for weather-related queries; handle them exclusively with get_location and get_weather as needed.
         When returning weather information, be sure it is aligned with the current date and day of the week.
+
+        # Task-Specific Instructions:
+
+        The current time is {formatted_time}.
+
+        Use schedule_task to schedule future or recurring actions for yourself. Provide a clear VEVENT with a DTSTART (and optional RRULE). Example VEVENT:
+        BEGIN:VEVENT
+        DTSTART;TZID=America/New_York:20250101T090000
+        RRULE:FREQ=DAILY;INTERVAL=1
+        END:VEVENT
+
+        Use check_tasks to review your upcoming or completed tasks. Use delete_task to remove tasks by their id.
+        You don't need to tell the user what the task ID is. Don't use emojis.
+        # IMPORTANT:
+        Always verify the DTSTART is relative to the current time.
+        When saving the prompt, make sure to include the name of the tool to be used along with the necessary arguments.
+        BAD EXAMPLE: "Check the stock price of Apple and Nvidia"
+        GOOD EXAMPLE: "Call get_stock_price with symbols AAPL and NVDA"
         """
 
     agent = Agent(
@@ -137,7 +157,7 @@ async def main(model: str, api_key: str):
         tools=[get_weather, get_location, web_search, browse_url, execute_python, 
         turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state, 
         list_calendar_events, create_calendar_event, delete_calendar_event,
-        schedule_task, check_tasks, delete_task],
+        schedule_task, check_tasks, delete_task, get_stock_price],
     )
 
     history = []
