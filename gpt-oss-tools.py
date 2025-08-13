@@ -145,9 +145,10 @@ async def main(model: str, api_key: str):
         You don't need to tell the user what the task ID is. Don't use emojis.
         # IMPORTANT:
         Always verify the DTSTART is relative to the current time.
-        When saving the prompt, make sure to include the name of the tool to be used along with the necessary arguments.
-        BAD EXAMPLE: "Check the stock price of Apple and Nvidia"
-        GOOD EXAMPLE: "Call get_stock_price with symbols AAPL and NVDA"
+        When saving the prompt, make sure to use natural language and formulate the prompt as if you are the user.
+        BAD EXAMPLE: "get_stock_price ticker=NVDA; get_stock_price ticker=TSM; get_stock_price ticker=AAPL"
+        GOOD EXAMPLE: "Check the stock price for AAPL, NVDA, and TSM"
+        NEVER USE NEW LINES IN TASK PROMPTS!
         """
 
     agent = Agent(
