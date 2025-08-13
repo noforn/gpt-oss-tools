@@ -19,6 +19,7 @@ from lightTools import *
 from calendarTools import list_calendar_events, create_calendar_event, delete_calendar_event
 from taskTools import schedule_task, check_tasks, delete_task
 from taskScheduler import TaskScheduler
+from stockTools import get_stock_price
 from pylatexenc.latex2text import LatexNodes2Text
 from tableTools import fix_markdown_tables, linkify_bare_urls
 
@@ -91,6 +92,7 @@ def build_instructions() -> str:
         schedule_task: Schedule a future or recurring task (store session_id, task_id, prompt, and VEVENT).
         check_tasks: List scheduled tasks and their status (upcoming/completed).
         delete_task: Delete a scheduled task by task id.
+        get_stock_price: Get the latest stock price for the given ticker symbol.
 
         # General Tool Usage Guidelines
 
@@ -157,7 +159,7 @@ def create_agent(model: str, api_key: str) -> Agent:
         tools=[get_weather, get_location, web_search, browse_url, execute_python, 
         turn_on_light, turn_off_light, set_light_brightness, set_light_hsv, get_light_state, 
         list_calendar_events, create_calendar_event, delete_calendar_event,
-        schedule_task, check_tasks, delete_task],
+        schedule_task, check_tasks, delete_task, get_stock_price],
     )
 
 
