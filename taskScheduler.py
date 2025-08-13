@@ -15,6 +15,7 @@ from statusTools import (
     set_fallback_session_id,
     mark_running_scheduled_task,
     clear_tool_status,
+    clear_tool_status_for_session_now,
 )
 
 
@@ -251,6 +252,12 @@ class TaskScheduler:
                     if not rrule:
                         t["completed"] = True
                     changed = True
+                    # Clear any lingering status after assistant response injection
+                    try:
+                        if sid:
+                            clear_tool_status_for_session_now(sid)
+                    except Exception:
+                        pass
                 except Exception:
                     pass
 

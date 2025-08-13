@@ -132,3 +132,35 @@ def mark_deleting_task() -> None:
 
 def mark_running_scheduled_task() -> None:
     _mark_status("Running scheduled task…", "task")
+
+
+# New: immediate-clear helpers to flush any active status without linger
+def clear_tool_status_now() -> None:
+    """Immediately clear current status for the effective session without linger."""
+    session_id = _get_effective_session_id()
+    if not session_id:
+        return
+    now = time.time()
+    prev = _session_tool_status.get(session_id) or {}
+    prev.update({
+        "active": False,
+        "searching": False,
+        "updated_at": now,
+        "linger_until": now,  # no linger
+    })
+    _session_tool_status[session_id] = prev
+
+
+def clear_tool_status_for_session_now(session_id: str) -> None:
+    """Immediately clear status for a specific session id without linger."""
+    if not session_id:
+        return
+    now = time.time()
+    prev = _session_tool_status.get(session_id) or {}
+    prev.update({
+        "active": False,
+        "searching": False,
+        "updated_at": now,
+        "linger_until": now,
+    })
+    _session_tool_status[session_id] = prev
