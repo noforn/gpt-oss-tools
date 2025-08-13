@@ -12,7 +12,7 @@ from agents import Agent, Runner
 from agents.extensions.models.litellm_model import LitellmModel
 
 from searchTools import web_search, browse_url
-from statusTools import get_tool_status, set_current_session_id, set_fallback_session_id
+from statusTools import get_tool_status, set_current_session_id, set_fallback_session_id, clear_tool_status_for_session_now
 from weatherTools import get_location, get_weather
 from pythonTools import execute_python
 from lightTools import *
@@ -123,6 +123,7 @@ def build_instructions() -> str:
         If the user asks you to get the state of the lights, use the get_light_state tool.
         If it would be useful to check the state of the lights before using any of the other light tools, use the get_light_state tool.
         Avoid using tables or bullets when describing the state of the lights, use natural language instead.
+        You don't need to include values in your response, unless the user specifically asks for them.
 
         # Weather-Specific Instructions:
 
@@ -204,6 +205,11 @@ async def _inject_message(session_id: str, user_message: str) -> str:
     history.append(f"User (scheduled): {user_message}")
     history.append(f"Iris: {processed}")
     session["rev"] = session.get("rev", 0) + 2
+    try:
+        # Ensure any active status is cleared immediately when a response is produced
+        clear_tool_status_for_session_now(session_id)
+    except Exception:
+        pass
     return response_text
 
 
@@ -234,6 +240,16 @@ def create_app() -> FastAPI:
         sess = session_store.get(session_id) or {}
         base["rev"] = int(sess.get("rev", 0))
         return base
+
+    # Allow client to explicitly clear any lingering status immediately
+    @app.get("/api/status/clear")
+    async def status_clear_endpoint(session_id: str = ""):
+        try:
+            if session_id:
+                clear_tool_status_for_session_now(session_id)
+            return {"ok": True}
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
     @app.get("/api/history")
     async def history_endpoint(session_id: str = ""):
@@ -301,6 +317,12 @@ def create_app() -> FastAPI:
         history.append(f"User: {user_message}")
         history.append(f"Iris: {processed}")
         session["rev"] = session.get("rev", 0) + 2
+
+        # Immediately clear any active status when a response is ready
+        try:
+            clear_tool_status_for_session_now(session_id)
+        except Exception:
+            pass
 
         return JSONResponse({"reply": processed, "session_id": session_id, "rev": session["rev"]})
 
@@ -1148,11 +1170,14 @@ body.gradient-background::after {
         typingEl.classList.remove('typing');
         typingEl.querySelector('.content').innerHTML = renderMarkdown(reply);
         scrollToBottom();
+        // Proactively clear any lingering server-side status once reply is shown
+        try { fetch(`/api/status/clear?session_id=${encodeURIComponent(sessionId)}`); } catch (_) {}
       } catch (err) {
         stopStatusPolling();
         typingEl.classList.remove('typing');
         typingEl.querySelector('.content').innerHTML = renderMarkdown('Error: ' + (err?.message || err));
         scrollToBottom();
+        try { fetch(`/api/status/clear?session_id=${encodeURIComponent(sessionId)}`); } catch (_) {}
       } finally {
         sendEl.disabled = false;
       }
