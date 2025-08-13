@@ -5,8 +5,9 @@ Iris is your intelligent, always-ready assistant that combines advanced reasonin
 ## **Key Features**  
 
 - **Natural, interactive conversations** — Use Iris from the command-line or through a sleek web interface, powered by a fast, private local model that delivers clear, markdown-formatted answers.  
-- **Real-time web intelligence** — Search the web, open specific pages, and get concise, relevant summaries for up-to-date information.  
-- **Weather at a glance** — Automatically detect your location and pull accurate forecasts from weather.gov.  
+- **Real-time web intelligence** — Search the web, open specific pages, and get concise, relevant summaries for up-to-date information.
+- **Weather at a glance** — Automatically detect your location and pull accurate forecasts from weather.gov.
+- **Real-time stock market insights** — Fetch live prices, daily changes, and percentage moves for any ticker.
 - **Safe, powerful code execution** — Run Python in a secure sandbox for quick calculations, data processing, or rapid prototyping.
 - **Seamless calendar management** — View, create, and delete events from your Google Calendar after a one-time authentication.
 - **Scheduled tasks** — Create one-time or recurring tasks, mark them complete, and have your agenda persist across sessions.
@@ -22,6 +23,7 @@ Iris is your intelligent, always-ready assistant that combines advanced reasonin
 - Control your smart home devices as naturally as sending a message.
 - Review your schedule, add new appointments, or manage events effortlessly.
 - Schedule one-time or recurring tasks and check them off right in the conversation.
+- Schedule a daily stock market check by combining stock tools with task scheduling.
 - Enjoy a streamlined, visual chat experience right from your browser.
 
 ## Getting Started
