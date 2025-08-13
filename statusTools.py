@@ -133,6 +133,9 @@ def mark_deleting_task() -> None:
 def mark_running_scheduled_task() -> None:
     _mark_status("Running scheduled task…", "task")
 
+def mark_getting_stock_price() -> None:
+    _mark_status("Checking stock price…", "stock")
+
 
 # New: immediate-clear helpers to flush any active status without linger
 def clear_tool_status_now() -> None:
