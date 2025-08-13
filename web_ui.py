@@ -148,6 +148,9 @@ def build_instructions() -> str:
         You don't need to tell the user what the task ID is. Don't use emojis.
         # IMPORTANT:
         Always verify the DTSTART is relative to the current time.
+        When saving the prompt, make sure to include the name of the tool to be used along with the necessary arguments.
+        BAD EXAMPLE: "Check the stock price of Apple and Nvidia"
+        GOOD EXAMPLE: "Call get_stock_price with symbols AAPL and NVDA"
         """
 
 
